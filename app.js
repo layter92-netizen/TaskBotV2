@@ -308,7 +308,8 @@ async function submitInvTransaction(type) {
         quantity: qtyEl.value,
         recipient: type === 'issuance' ? (document.getElementById('iss-recipient') ? document.getElementById('iss-recipient').value : '') : '',
         operationDate: dateEl ? dateEl.value : '',
-        telegramId: currentUserTgId
+        telegramId: currentUserTgId,
+        userSource: userAccess ? userAccess.name : 'Unknown'
     };
 
     tg.MainButton.showProgress();
@@ -341,7 +342,14 @@ async function submitNewMaterial() {
         tg.showAlert('Заповніть всі поля!');
         return;
     }
-    const payload = { action: 'addMaterial', category: cat.value, name: name.value, unit: unit.value, telegramId: currentUserTgId };
+    const payload = { 
+        action: 'addMaterial', 
+        category: cat.value, 
+        name: name.value, 
+        unit: unit.value, 
+        telegramId: currentUserTgId,
+        userSource: userAccess ? userAccess.name : 'Unknown'
+    };
     tg.MainButton.showProgress();
     try {
         await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
@@ -398,7 +406,22 @@ function populateSelects() {
     if (repWorker) {
         repWorker.innerHTML = '<option value="">— Всі працівники —</option>';
         (refData.personnel || []).forEach(p => {
-            const o = document.createElement('option'); o.value = p.name; o.textContent = p.name + (p.category ? ' (' + p.category + ')' : ''); repWorker.appendChild(o);
+            const o = document.createElement('option');
+            o.value = p.name;
+            o.textContent = p.name + (p.category ? ' (' + p.category + ')' : '');
+            repWorker.appendChild(o);
+        });
+    }
+
+    // Додаємо отримувачів для видачі на складі
+    const issRecipient = document.getElementById('iss-recipient');
+    if (issRecipient) {
+        issRecipient.innerHTML = '<option value="">— оберіть отримувача —</option>';
+        (refData.personnel || []).forEach(p => {
+            const o = document.createElement('option');
+            o.value = p.name;
+            o.textContent = p.name;
+            issRecipient.appendChild(o);
         });
     }
 }
@@ -642,6 +665,7 @@ async function submitTask() {
     const payload = {
         action: 'saveTask',
         telegramId: currentUserTgId,
+        userSource: userAccess ? userAccess.name : 'Unknown',
         date: document.getElementById('wiz-date') ? document.getElementById('wiz-date').value : '',
         garden: document.getElementById('wiz-garden') ? document.getElementById('wiz-garden').value : '',
         workType: document.getElementById('wiz-workType') ? document.getElementById('wiz-workType').value : '',
