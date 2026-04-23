@@ -7,7 +7,7 @@
     <!-- Підключення Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=128">
+    <link rel="stylesheet" href="style.css?v=135">
     <link rel="stylesheet" href="icons_embed.css?v=101">
     <!-- Іконки -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -162,34 +162,40 @@
             <div id="tab-tasks" class="global-tab" style="display: none;">
                 
                 <div id="tasks-dashboard">
-                    <p class="subtitle" style="margin-bottom: 20px; text-align: center;">Оберіть тип робіт для створення наряду</p>
+                    <p class="subtitle" style="margin-bottom: 24px; text-align: center; opacity: 0.8;">Оберіть тип робіт для створення наряду</p>
                     <div class="task-grid">
                         <button class="tg-btn tg-manual" onclick="startWizard('manual')">
-                            <span class="tg-icon">✂️🌳</span><br>Ручні роботи
+                            <span class="tg-icon"><i class="fas fa-hand-holding-hand"></i></span>
+                            <span class="tg-label">Ручні роботи</span>
                         </button>
                         <button class="tg-btn tg-mech" onclick="startWizard('mechanized')">
-                            <span class="tg-icon">🚜</span><br>Механізовані
+                            <span class="tg-icon"><i class="fas fa-tractor"></i></span>
+                            <span class="tg-label">Механізовані</span>
                         </button>
                         <button class="tg-btn tg-mech-op" onclick="startWizard('mechanized_operator')">
-                            <span class="tg-icon">🚜👷</span><br>Трактор<br><small>+ оператори</small>
+                            <span class="tg-icon"><i class="fas fa-users-gear"></i></span>
+                            <span class="tg-label">Трактор + оператори</span>
                         </button>
                         <button class="tg-btn tg-mech-pest" onclick="showPesticideChoice()">
-                            <span class="tg-icon">🌿🧪</span><br>Засоби захисту
+                            <span class="tg-icon"><i class="fas fa-flask-vial"></i></span>
+                            <span class="tg-label">Засоби захисту</span>
                         </button>
                     </div>
                 </div>
                 <!-- Меню вибору пестицидів -->
                 <div id="pesticides-dashboard" style="display: none;">
-                    <button class="btn btn-secondary" onclick="hidePesticideChoice()" style="width: 100%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="hidePesticideChoice()" style="width: 100%; margin-bottom: 24px;">
                         <i class="fas fa-chevron-left"></i> Назад до всіх робіт
                     </button>
-                    <p class="subtitle" style="margin-bottom: 20px; text-align: center;">Оберіть варіант внесення ЗЗР</p>
+                    <p class="subtitle" style="margin-bottom: 24px; text-align: center; opacity: 0.8;">Оберіть варіант внесення ЗЗР</p>
                     <div class="task-grid">
                         <button class="tg-btn tg-mech-pest" onclick="startWizard('mechanized_pesticides')">
-                            <span class="tg-icon">🚜🌿</span><br>Звичайне внесення
+                            <span class="tg-icon"><i class="fas fa-spray-can-sparkles"></i></span>
+                            <span class="tg-label">Звичайне внесення</span>
                         </button>
                         <button class="tg-btn tg-mech-pest-op" onclick="startWizard('mechanized_pesticides_operator')">
-                            <span class="tg-icon">🚜👷🧪</span><br>Внесення<br><small>з операторами</small>
+                            <span class="tg-icon"><i class="fas fa-user-shield"></i></span>
+                            <span class="tg-label">Внесення з операторами</span>
                         </button>
                     </div>
                 </div>
@@ -522,6 +528,6 @@
     <!-- Контейнер повідомлень -->
     <div id="toast-container"></div>
 
-    <script src="app.js?v=128"></script>
+    <script src="app.js?v=135"></script>
 </body>
 </html>

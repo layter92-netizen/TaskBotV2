@@ -348,32 +348,42 @@ input:focus, select:focus, textarea:focus {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
     cursor: pointer;
     transition: var(--transition);
     box-shadow: var(--shadow-sm);
+    color: var(--text-main);
 }
+
 .tg-btn:active { transform: scale(0.95); }
 
 .tg-icon {
-    font-size: 40px;
+    font-size: 28px;
     background: var(--bg-input);
-    width: 70px;
-    height: 70px;
+    width: 64px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 20px;
+    border-radius: 18px;
     transition: var(--transition);
 }
 
-.tg-btn:hover .tg-icon { transform: scale(1.1) rotate(5deg); }
+.tg-label {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-main);
+}
 
-/* Different styles for task types */
-.tg-manual .tg-icon { background: #ecfdf5; color: #10b981; }
-.tg-mech .tg-icon { background: #fffbeb; color: #f59e0b; }
-.tg-mech-op .tg-icon { background: #eff6ff; color: #3b82f6; }
-.tg-mech-pest .tg-icon { background: #fdf2f8; color: #ec4899; }
+.tg-btn:hover .tg-icon { transform: scale(1.1) translateY(-5px); }
+
+/* Icon Colors */
+.tg-manual .tg-icon { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+.tg-mech .tg-icon { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+.tg-mech-op .tg-icon { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+.tg-mech-pest .tg-icon { color: #8b5cf6; background: rgba(139, 92, 246, 0.1); }
+.tg-mech-pest-op .tg-icon { color: #ec4899; background: rgba(236, 72, 153, 0.1); }
 
 /* --- Wizard --- */
 .steps-bar {
