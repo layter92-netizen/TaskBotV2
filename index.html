@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Task Bot V2</title>
+    <!-- Підключення Telegram Web App API -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=99">
+    <!-- Іконки -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // Inline ловушка помилок
+        window.onerror = function(msg, url, line) {
+            alert("JS Error: " + msg + "\nLine: " + line + "\nURL: " + url);
+        };
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Шапка (Header) -->
+        <header class="header">
+            <h1 id="app-title">Склад</h1>
+            <div class="header-controls">
+                <button id="theme-toggle" class="icon-btn">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Основна область -->
+        <main class="content" id="main-content">
+            
+            <!-- ГЛОБАЛЬНА ВКЛАДКА: СКЛАД -->
+            <div id="tab-inventory" class="global-tab active">
+                
+                <!-- Навігація вкладок складу -->
+                <nav class="tabs">
+                    <button class="tab-btn active" data-target="balance-view">
+                        <i class="fas fa-boxes"></i> Залишки
+                    </button>
+                    <button class="tab-btn" data-target="arrival-view">
+                        <i class="fas fa-arrow-down"></i> Прихід
+                    </button>
+                    <button class="tab-btn" data-target="issuance-view">
+                        <i class="fas fa-arrow-up"></i> Видача
+                    </button>
+                </nav>
+
+                <!-- Вкладка Залишки (Balance) -->
+                <section id="balance-view" class="view active">
+                    <div class="categories-scroll">
+                        <button class="cat-chip active" data-cat="all">Всі</button>
+                        <button class="cat-chip" data-cat="fuel">ПММ</button>
+                        <button class="cat-chip" data-cat="pesticides">Пестициди</button>
+                        <button class="cat-chip" data-cat="fertilizers">Добрива</button>
+                        <button class="cat-chip" data-cat="parts">Запчастини</button>
+                        <button class="cat-chip" data-cat="irrigation_mat">Зрошення мат.</button>
+                        <button class="cat-chip" data-cat="other_mat">Інші мат.</button>
+                    </div>
+
+                    <div class="warehouse-actions">
+                        <button id="btn-add-material" class="btn btn-primary" style="margin-bottom: 10px;">
+                            <i class="fas fa-plus"></i> Новий товар бази
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="panel-header">
+                            <h2>Поточні залишки</h2>
+                            <button class="icon-btn" onclick="loadAllData()" style="font-size: 16px;">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="inventory-list" class="list-container">
+                            <div class="loader"><i class="fas fa-spinner fa-spin"></i> Завантаження з бази...</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Вкладка Прихід (Arrival) -->
+                <section id="arrival-view" class="view">
+                    <div class="card">
+                        <h2>Що надходить</h2>
+                        <form id="form-arrival">
+                            <div class="input-group">
+                                <label>Категорія (Журнал)</label>
+                                <select id="arr-category" required onchange="renderItemSelect('arr')">
+                                    <option value="">— оберіть —</option>
+                                    <option value="ПММ">ПММ</option>
+                                    <option value="Пестициди">Пестициди</option>
+                                    <option value="Добрива">Добрива</option>
+                                    <option value="Запчастини">Запчастини</option>
+                                    <option value="Зрошення мат.">Зрошення мат.</option>
+                                    <option value="Інші мат.">Інші мат.</option>
+                                </select>
+                            </div>
+                            <div class="input-group" id="arr-item-group" style="display:none;">
+                                <label>Назва препарату / матеріалу</label>
+                                <select id="arr-item" required><option value="">— оберіть матеріали —</option></select>
+                                <button type="button" class="btn btn-primary" style="margin-top: 10px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; font-size: 14px; background-color: transparent; border: 2px solid var(--accent-color); color: var(--accent-color); transition: all 0.2s ease;" onclick="if(window.openAddMaterialModal) window.openAddMaterialModal('arr'); else alert('Оновіть кеш (перезапустіть бота) - функція завантажується...');" onmouseover="this.style.backgroundColor='var(--accent-color)'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--accent-color)';" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                                    <i class="fas fa-plus"></i> Створити новий матеріал
+                                </button>
+                            </div>
+                            <div class="input-group">
+                                <label>Кількість / Об'єм</label>
+                                <input type="number" id="arr-qty" placeholder="0.00" step="0.01" min="0.01" inputmode="decimal" required>
+                            </div>
+                            <div class="input-group">
+                                <label>📆 Дата операції</label>
+                                <input type="date" id="arr-date">
+                            </div>
+                            <button type="submit" class="btn btn-arrival">
+                                <i class="fas fa-arrow-down" style="margin-right: 5px;"></i> Записати прихід
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Вкладка Видача (Issuance) -->
+                <section id="issuance-view" class="view">
+                    <div class="card">
+                        <h2>Що видається</h2>
+                        <form id="form-issuance">
+                            <div class="input-group">
+                                <label>Категорія (Журнал)</label>
+                                <select id="iss-category" required onchange="renderItemSelect('iss')">
+                                    <option value="">— оберіть —</option>
+                                    <option value="ПММ">ПММ</option>
+                                    <option value="Пестициди">Пестициди</option>
+                                    <option value="Добрива">Добрива</option>
+                                    <option value="Запчастини">Запчастини</option>
+                                    <option value="Зрошення мат.">Зрошення мат.</option>
+                                    <option value="Інші мат.">Інші мат.</option>
+                                </select>
+                            </div>
+                            <div class="input-group" id="iss-item-group" style="display:none;">
+                                <label>Назва препарату / матеріалу</label>
+                                <select id="iss-item" required onchange="updateBalanceBadge()"><option value="">— оберіть матеріали —</option></select>
+                                <div id="iss-balance-badge" class="balance-badge" style="display:none; margin-top: 5px;">
+                                    Залишок: <span id="iss-balance-val">0</span>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Кількість / Об'єм</label>
+                                <input type="number" id="iss-qty" placeholder="0.00" step="0.01" min="0.01" inputmode="decimal" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Кому видано</label>
+                                <div id="iss-recipient-wrapper">
+                                    <input type="text" id="iss-recipient" placeholder="Тракторист / Бригада" required>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>📆 Дата операції</label>
+                                <input type="date" id="iss-date">
+                            </div>
+                            <button type="submit" class="btn btn-issuance">
+                                <i class="fas fa-arrow-up" style="margin-right: 5px;"></i> Записати видачу
+                            </button>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ГЛОБАЛЬНА ВКЛАДКА: РОБОТИ -->
+            <div id="tab-tasks" class="global-tab" style="display: none;">
+                
+                <div id="tasks-dashboard">
+                    <p class="subtitle" style="margin-bottom: 20px; text-align: center;">Оберіть тип робіт для створення наряду</p>
+                    <div class="task-grid">
+                        <button class="tg-btn tg-manual" onclick="startWizard('manual')">
+                            <span class="tg-icon">✂️🌳</span><br>Ручні роботи
+                        </button>
+                        <button class="tg-btn tg-mech" onclick="startWizard('mechanized')">
+                            <span class="tg-icon">🚜</span><br>Механізовані
+                        </button>
+                        <button class="tg-btn tg-mech-op" onclick="startWizard('mechanized_operator')">
+                            <span class="tg-icon">🚜👷</span><br>Трактор<br><small>+ оператори</small>
+                        </button>
+                        <button class="tg-btn tg-mech-pest" onclick="showPesticideChoice()">
+                            <span class="tg-icon">🌿🧪</span><br>Засоби захисту
+                        </button>
+                    </div>
+                </div>
+                <!-- Меню вибору пестицидів -->
+                <div id="pesticides-dashboard" style="display: none;">
+                    <button class="btn btn-secondary" onclick="hidePesticideChoice()" style="width: 100%; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <i class="fas fa-chevron-left"></i> Назад до всіх робіт
+                    </button>
+                    <p class="subtitle" style="margin-bottom: 20px; text-align: center;">Оберіть варіант внесення ЗЗР</p>
+                    <div class="task-grid">
+                        <button class="tg-btn tg-mech-pest" onclick="startWizard('mechanized_pesticides')">
+                            <span class="tg-icon">🚜🌿</span><br>Звичайне внесення
+                        </button>
+                        <button class="tg-btn tg-mech-pest-op" onclick="startWizard('mechanized_pesticides_operator')">
+                            <span class="tg-icon">🚜👷🧪</span><br>Внесення<br><small>з операторами</small>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- WIZARD CONTAINER -->
+                <div id="task-wizard" style="display: none;">
+                    
+                    <div class="panel-header">
+                        <button class="icon-btn" onclick="closeWizard()"><i class="fas fa-arrow-left"></i></button>
+                        <h2 id="wiz-title" style="margin:0; font-size: 16px;">Наряд</h2>
+                        <div style="width:20px;"></div>
+                    </div>
+
+                    <!-- Wizard Progress -->
+                    <div class="steps-bar">
+                        <div class="step-dot" id="wstep1"></div>
+                        <div class="step-dot" id="wstep2"></div>
+                        <div class="step-dot" id="wstep3"></div>
+                        <div class="step-dot" id="wstep4"></div>
+                    </div>
+
+                    <!-- WIZARD VIEWS -->
+                    <div id="wizard-views">
+                        
+                        <!-- W1: Location & Date & Work Type -->
+                        <div id="wv-1" class="w-view">
+                            <div class="card">
+                                <div class="input-group">
+                                    <label>Дата роботи</label>
+                                    <div class="date-helpers">
+                                        <button class="date-chip" onclick="setWizDate('today')">Сьогодні</button>
+                                        <button class="date-chip" onclick="setWizDate('yesterday')">Вчора</button>
+                                    </div>
+                                    <input type="date" id="wiz-date" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Сад / Блок (Локація)</label>
+                                    <select id="wiz-garden"><option value="">- оберіть -</option></select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Вид роботи</label>
+                                    <select id="wiz-workType"><option value="">- оберіть -</option></select>
+                                </div>
+                                <div class="input-group">
+                                    <label id="wiz-qty-label">Обсяг виконаної роботи (га або год)</label>
+                                    <input type="number" id="wiz-qty" placeholder="0.0" step="0.1" inputmode="decimal">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- W2: Personnel / Machinery -->
+                        <div id="wv-2" class="w-view" style="display:none;">
+                            <div class="card" id="wiz-manual-section" style="display:none;">
+                                <h3>Працівники</h3>
+                                <div class="input-group">
+                                    <label>Оберіть бригаду (опціонально)</label>
+                                    <select id="wiz-brigade" onchange="filterWorkersByBrigade()"><option value="">всі працівники</option></select>
+                                </div>
+                                <div class="chips-wrap" id="wiz-workers-chips" style="margin-bottom: 10px;"></div>
+                                <button type="button" class="select-all-btn" id="btn-select-all" onclick="selectAllBrigade()" style="display:none;">
+                                    <i class="fas fa-check-double"></i> Обрати всіх у бригаді
+                                </button>
+                                
+                                <div class="input-group" style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 15px;">
+                                    <label>Коментар до наряду (Стовпець J)</label>
+                                    <textarea id="wiz-manual-comment" rows="2" placeholder="Напишіть коментар, бригадира і т.д..." style="width: 100%; border-radius: 8px; border: 1px solid var(--border-color); padding: 8px; background: var(--input-bg); color: var(--text-main); font-family: inherit; resize: vertical;"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="card" id="wiz-mech-section" style="display:none;">
+                                <h3>Техніка</h3>
+                                <div class="input-group">
+                                    <label>Тракторист</label>
+                                    <select id="wiz-driver"><option value="">- оберіть водія -</option></select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Трактор</label>
+                                    <select id="wiz-tractor"><option value="">- оберіть -</option></select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Агрегат</label>
+                                    <select id="wiz-implement"><option value="">- оберіть -</option></select>
+                                </div>
+                                <div id="wiz-operator-wrap" style="display:none;">
+                                    <h4 style="margin-top:20px; margin-bottom:10px;">Оператори</h4>
+                                    <div id="wiz-op-list" style="margin-bottom: 15px;"></div>
+                                    <div style="padding:10px; background:var(--input-bg); border: 1px dashed var(--border-color); border-radius:8px; margin-top:10px;">
+                                        <div class="input-group">
+                                            <label>Оператор (Асистент)</label>
+                                            <select id="wiz-operator"><option value="">- оберіть оператора -</option></select>
+                                        </div>
+                                        <div class="input-group" style="margin-bottom:10px;">
+                                            <label>Обсяг оператора (якщо відрізняється)</label>
+                                            <input type="number" id="wiz-op-qty" placeholder="0.0" step="0.1" inputmode="decimal">
+                                        </div>
+                                        <div class="input-group" style="margin-bottom:10px;">
+                                            <label>Додаткові підготовчі години</label>
+                                            <input type="number" id="wiz-op-hrs" placeholder="0.0" step="0.5" inputmode="decimal">
+                                        </div>
+                                        <div class="input-group" style="margin-bottom:10px;">
+                                            <label>Вид роботи для додаткових годин</label>
+                                            <select id="wiz-op-work"><option value="">- оберіть роботу -</option></select>
+                                        </div>
+                                        <button type="button" class="btn btn-secondary" onclick="addWizOperator()" style="width:100%; margin-top:5px; background:var(--border-color); color:var(--text-main); font-weight:600;"><i class="fas fa-plus"></i> Додати оператора</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- W3: Pesticides (If selected) -->
+                        <div id="wv-3" class="w-view" style="display:none;">
+                            <div class="card">
+                                <h3>ЗЗР / Добрива</h3>
+                                <p class="subtitle" style="margin-bottom: 10px;">Додайте використані препарати</p>
+                                
+                                <div id="wiz-pest-list"></div>
+                                
+                                <div style="margin-top: 15px; border: 1px dashed var(--border-color); padding: 10px; border-radius: 8px;">
+                                    <div class="input-group">
+                                        <label>Препарат</label>
+                                        <select id="wiz-pest-select"><option value="">- оберіть -</option></select>
+                                    </div>
+                                    <div style="display:flex; gap: 10px;">
+                                        <div class="input-group" style="flex:1;">
+                                            <input type="number" id="wiz-pest-dose" placeholder="Доза на бочку" step="0.01">
+                                        </div>
+                                        <div class="input-group" style="flex:1;">
+                                            <input type="number" id="wiz-pest-vol" placeholder="Використано всього" step="0.01">
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-outline" style="width:100%; padding: 8px;" onclick="addPesticideToTask()">+ Додати препарат</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- W4: Summary & Confirm -->
+                        <div id="wv-4" class="w-view" style="display:none;">
+                            <div class="card">
+                                <h2>Підтвердження наряду</h2>
+                                <div id="wiz-summary-content" style="margin-top: 15px;"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Wizard Controls -->
+                    <div class="wiz-controls" style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn btn-back" id="wiz-prev" onclick="wizStep(-1)" style="flex: 1;"><i class="fas fa-arrow-left"></i> Назад</button>
+                        <button class="btn btn-primary" id="wiz-next" onclick="wizStep(1)" style="flex: 2;">Далі <i class="fas fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ГЛОБАЛЬНА ВКЛАДКА: ЗВІТИ -->
+            <div id="tab-reports" class="global-tab" style="display: none; padding-bottom: 80px;">
+                <p class="subtitle" style="text-align: center; margin-bottom: 15px;">Параметри звіту</p>
+                <div class="card">
+                    <div class="input-group">
+                        <label>Модуль</label>
+                        <select id="rep-module" onchange="updateReportCategories()">
+                            <option value="inventory">Склад</option>
+                            <option value="tasks">Роботи</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Категорія журналу</label>
+                        <select id="rep-category">
+                            <!-- Заповнюється динамічно -->
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Тип звіту</label>
+                        <select id="rep-detailed">
+                            <option value="false">Загальний (Підсумки)</option>
+                            <option value="true">Розширений (Повний перелік)</option>
+                            <option value="calendar">Календарний (Сітка по днях)</option>
+                            <option value="payroll">Зарплатна відомість</option>
+                            <option value="work_summary">Звіт по видах робіт</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group" id="rep-worker-wrap" style="display:none;">
+                        <label>👤 Фільтр по працівнику</label>
+                        <select id="rep-worker">
+                            <option value="">— Всі працівники —</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <div class="input-group" style="flex: 1;">
+                            <label>З дати</label>
+                            <input type="date" id="rep-start-date">
+                        </div>
+                        <div class="input-group" style="flex: 1;">
+                            <label>По дату</label>
+                            <input type="date" id="rep-end-date">
+                        </div>
+                    </div>
+                    
+                    <div class="chips-wrap" style="justify-content: center; margin-bottom: 15px;">
+                        <button class="w-chip" onclick="setRepDates('today')">Сьогодні</button>
+                        <button class="w-chip" onclick="setRepDates('yesterday')">Вчора</button>
+                        <button class="w-chip" onclick="setRepDates('month')">Цей місяць</button>
+                    </div>
+                    
+                    <button class="btn btn-primary" style="width: 100%;" onclick="loadReport()">
+                        <span class="tg-icon" style="font-size:18px; margin:0 5px 0 0;">📊</span> Сформувати
+                    </button>
+                </div>
+                
+                <div id="report-results" style="margin-top: 20px; display: none;">
+                    <!-- Summary Cards -->
+                    <div class="summary-container" id="report-summary" style="display:none;">
+                        <div class="summary-card">
+                            <span class="summary-val" id="sum-qty">0.0</span>
+                            <span class="summary-label">Обсяг</span>
+                        </div>
+                        <div class="summary-card">
+                            <span class="summary-val" id="sum-total">0.0</span>
+                            <span class="summary-label">Сума</span>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding: 10px;">
+                        <div id="report-table-wrap" style="width: 100%;">
+                            <table style="width:100%; border-collapse: collapse; font-size: 12px; text-align: left;" id="report-table">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border-color);" id="report-thead">
+                                    </tr>
+                                </thead>
+                                <tbody id="report-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="report-empty" style="display:none; text-align:center; padding: 20px; color: var(--text-muted);">
+                            Дані відсутні за обраними критеріями
+                        </div>
+                        <button class="btn btn-outline" id="btn-download-excel" onclick="downloadExcel()" style="width: 100%; margin-top: 15px; display: none;">
+                            <span class="tg-icon" style="font-size:16px; margin:0 5px 0 0;">📥</span> Завантажити в Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Нижнє навігаційне меню (Bottom Nav) -->
+        <nav class="bottom-nav">
+            <button id="nav-inventory" class="nav-item active" onclick="switchGlobalTab('tab-inventory', this)">
+                <span style="font-size: 20px; line-height: 1; margin-bottom: 4px;">📦</span>
+                <span>Склад</span>
+            </button>
+            <button id="nav-tasks" class="nav-item" onclick="switchGlobalTab('tab-tasks', this)">
+                <span style="font-size: 20px; line-height: 1; margin-bottom: 4px;">📋</span>
+                <span>Роботи</span>
+            </button>
+            <button id="nav-reports" class="nav-item" onclick="switchGlobalTab('tab-reports', this)">
+                <span style="font-size: 20px; line-height: 1; margin-bottom: 4px;">📊</span>
+                <span>Звіти</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Екран блокування (Access Denied) -->
+    <div id="access-denied" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;">
+        <span style="font-size: 64px; margin-bottom: 20px;">🔒</span>
+        <h1 style="color: var(--danger-color); margin-bottom: 10px;">Вхід обмежено</h1>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Ваш доступ не активовано або ви не в списку персоналу.</p>
+        <div class="card" style="width: 100%; max-width: 300px; margin-bottom: 20px;">
+            <p style="font-size: 12px; margin-bottom: 5px;">Ваш системний ID (надайте адміну):</p>
+            <code id="my-tg-id" style="font-size: 18px; font-weight: bold; background: #eee; padding: 5px 10px; border-radius: 4px; display: block; border: 1px solid #ccc; cursor: pointer; color: #333;" onclick="copyMyId()">...</code>
+        </div>
+        <button class="btn btn-primary" onclick="loadAllData()" style="width: 100%; max-width: 300px;">
+            🔄 Перевірити доступ
+        </button>
+    </div>
+
+    <!-- Вікно вводу PIN -->
+    <div id="pin-modal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+        <div class="card" style="width: 100%; max-width: 320px; text-align: center;">
+            <h2 style="margin-bottom: 10px;">Введіть PIN-код</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 14px;">Для вашого ID встановлено захист</p>
+            <div id="pin-display" style="font-size: 32px; letter-spacing: 15px; margin-bottom: 30px; height: 40px; color: var(--accent-color); font-weight: bold;">____</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                <button class="btn btn-secondary" onclick="addPinDigit('1')">1</button>
+                <button class="btn btn-secondary" onclick="addPinDigit('2')">2</button>
+                <button class="btn btn-secondary" onclick="addPinDigit('3')">3</button>
+                <button class="btn btn-secondary" onclick="addPinDigit('4')">4</button>
+                <button class="btn btn-secondary" onclick="addPinDigit('5')">5</button>
+                <button class="btn btn-secondary" onclick="addPinDigit('6')">6</button>
+                <button class="btn btn-secondary" onclick="addPinDigit('7')">7</button>
+                <button class="btn btn-secondary" onclick="addPinDigit('8')">8</button>
+                <button class="btn btn-secondary" onclick="addPinDigit('9')">9</button>
+                <button class="btn btn-danger" onclick="clearPin()">C</button>
+                <button class="btn btn-secondary" onclick="addPinDigit('0')">0</button>
+                <button class="btn btn-success" onclick="verifyPin()"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка додавання матеріалу -->
+    <div id="modal-add" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Новий матеріал (В базу)</h2>
+            <form id="form-add-material">
+                <div class="input-group">
+                    <label>Категорія</label>
+                    <select id="input-category" required>
+                        <option value="ПММ">ПММ (Паливо)</option>
+                        <option value="Пестициди">Пестициди (ЗЗР)</option>
+                        <option value="Добрива">Добрива</option>
+                        <option value="Запчастини">Запчастини</option>
+                        <option value="Зрошення мат.">Зрошення мат.</option>
+                        <option value="Інші мат.">Інші мат.</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Назва</label>
+                    <input type="text" id="input-name" placeholder="Напр. Селітра" required>
+                </div>
+                <div class="input-group">
+                    <label>Одиниця виміру</label>
+                    <input type="text" id="input-unit" placeholder="л, кг, шт..." required>
+                </div>
+                <button type="submit" class="btn btn-success">Додати в довідник</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+const htmlEl = document.documentElement;
+if (tg.colorScheme === 'dark') htmlEl.setAttribute('data-theme', 'dark');
+
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyIFjqRtTZCcuCQQGcm_-McfK30wq2k6Z3UrPSGIU6AysmN-vbb_fGTkvxTBj-BW-HHzQ/exec';
+
+let inventoryData = [];
+let refData = { personnel: [], machinery: [], implements: [], gardens: [], workTypes: [], pesticides: [] };
+let userAccess = null;
+let currentTaskType = null;
+let currentWizStep = 1;
+let selectedWorkers = [];
+let taskPesticides = [];
+let enteredPin = '';
+let isPinVerified = false;
+
+let currentUserTgId = '123456';
+try {
+    if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) {
+        currentUserTgId = String(tg.initDataUnsafe.user.id);
+    }
+} catch(e) {}
+
+function updateIdOnScreen() {
+    const el = document.getElementById('my-tg-id');
+    if (el) el.textContent = currentUserTgId;
+}
+function copyMyId() {
+    navigator.clipboard.writeText(currentUserTgId)
+        .then(() => tg.showAlert('ID скопійовано: ' + currentUserTgId))
+        .catch(() => tg.showAlert('Ваш ID: ' + currentUserTgId));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const deniedEl = document.getElementById('access-denied');
+    if (deniedEl) deniedEl.style.display = 'none';
+    updateIdOnScreen();
+    const today = new Date().toISOString().split('T')[0];
+    ['arr-date', 'iss-date', 'rep-end-date', 'wiz-date'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = today;
+    });
+    const now = new Date();
+    const firstDay = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01';
+    const repStart = document.getElementById('rep-start-date');
+    if (repStart) repStart.value = firstDay;
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-target'); if (!target) return;
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            const targetEl = document.getElementById(target);
+            if (targetEl) targetEl.classList.add('active');
+            btn.classList.add('active');
+        });
+    });
+    document.querySelectorAll('.cat-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            renderInventory(chip.getAttribute('data-cat'));
+        });
+    });
+    const formArrival = document.getElementById('form-arrival');
+    if (formArrival) formArrival.addEventListener('submit', e => { e.preventDefault(); submitInvTransaction('arrival'); });
+    const formIssuance = document.getElementById('form-issuance');
+    if (formIssuance) formIssuance.addEventListener('submit', e => { e.preventDefault(); submitInvTransaction('issuance'); });
+    const formAdd = document.getElementById('form-add-material');
+    if (formAdd) formAdd.addEventListener('submit', e => { e.preventDefault(); submitNewMaterial(); });
+    const btnAddMat = document.getElementById('btn-add-material');
+    if (btnAddMat) btnAddMat.addEventListener('click', () => openAddMaterialModal());
+    document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.addEventListener('click', () => { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); });
+    });
+    updateReportCategories();
+    loadAllData();
+});
+
+function addPinDigit(digit) {
+    if (enteredPin.length < 4) {
+        enteredPin += digit;
+        const disp = document.getElementById('pin-display');
+        if (disp) disp.textContent = '*'.repeat(enteredPin.length) + '_'.repeat(4 - enteredPin.length);
+        if (enteredPin.length === 4) setTimeout(verifyPin, 300);
+    }
+}
+function clearPin() {
+    enteredPin = '';
+    const disp = document.getElementById('pin-display');
+    if (disp) disp.textContent = '____';
+}
+function verifyPin() {
+    if (!userAccess || !userAccess.pin) return;
+    if (enteredPin === userAccess.pin) {
+        isPinVerified = true;
+        const modal = document.getElementById('pin-modal');
+        if (modal) modal.style.display = 'none';
+        tg.showAlert('Ласкаво просимо, ' + (userAccess.name || 'Користувач'));
+    } else { tg.showAlert('Неправильний PIN-код!'); clearPin(); }
+}
+
+async function loadAllData() {
+    updateIdOnScreen();
+    tg.MainButton.showProgress();
+    try {
+        const response = await fetch(GAS_URL + '?action=getAllData&telegramId=' + currentUserTgId);
+        const res = await response.json();
+        if (res.status === 'success') {
+            inventoryData = res.data.inventory || [];
+            refData = res.data.references || refData;
+            userAccess = res.data.access;
+            const pinModal = document.getElementById('pin-modal');
+            if (pinModal) pinModal.style.display = (userAccess && userAccess.pin && !isPinVerified) ? 'flex' : 'none';
+            applyPermissions();
+            renderInventory();
+            populateSelects();
+        } else { showAccessDenied(); }
+    } catch (err) { showAccessDenied(); }
+    finally { tg.MainButton.hideProgress(); }
+}
+
+function showAccessDenied() {
+    updateIdOnScreen();
+    const el = document.getElementById('access-denied');
+    if (el) el.style.display = 'flex';
+}
+
+function applyPermissions() {
+    const denied = document.getElementById('access-denied');
+    if (!userAccess) { showAccessDenied(); return; }
+    if (denied) denied.style.display = 'none';
+    const role = userAccess.role;
+    const navInv = document.getElementById('nav-inventory');
+    const navTasks = document.getElementById('nav-tasks');
+    const navReports = document.getElementById('nav-reports');
+    [navInv, navTasks, navReports].forEach(n => { if (n) n.style.display = 'flex'; });
+    if (role === 'worker') { if (navInv) navInv.style.display = 'none'; switchGlobalTab('tab-tasks', navTasks); }
+    else if (role === 'brigadier') { if (navInv) navInv.style.display = 'none'; }
+}
+
+function switchGlobalTab(tabId, btnEl) {
+    document.querySelectorAll('.global-tab').forEach(t => t.style.display = 'none');
+    const target = document.getElementById(tabId); if (target) target.style.display = 'block';
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    const titles = { 'tab-inventory': 'Склад', 'tab-tasks': 'Роботи', 'tab-reports': 'Звіти' };
+    const titleEl = document.getElementById('app-title');
+    if (titleEl) titleEl.textContent = titles[tabId] || 'TaskBot';
+}
+
+function renderInventory(catFilter) {
+    const list = document.getElementById('inventory-list'); if (!list) return;
+    list.innerHTML = '';
+    const map = { 'fuel': 'ПММ', 'pesticides': 'Пестициди', 'fertilizers': 'Добрива', 'parts': 'Запчастини', 'irrigation_mat': 'Зрошення мат.', 'other_mat': 'Інші мат.' };
+    let data = inventoryData;
+    if (catFilter && catFilter !== 'all') { const mapped = map[catFilter] || catFilter; data = inventoryData.filter(i => i.category === mapped); }
+    if (data.length === 0) { list.innerHTML = '<div class="empty-state"><p>Немає записів</p></div>'; return; }
+    data.forEach(item => {
+        const el = document.createElement('div'); el.className = 'inventory-item';
+        el.innerHTML = '<div class="item-info"><h4>' + item.name + '</h4><span class="item-cat">' + item.category + '</span></div><div class="item-qty">' + item.quantity + ' ' + item.unit + '</div>';
+        list.appendChild(el);
+    });
+}
+
+function renderItemSelect(prefix) {
+    const catEl = document.getElementById(prefix + '-category');
+    const itemGroup = document.getElementById(prefix + '-item-group');
+    const itemSel = document.getElementById(prefix + '-item');
+    if (!catEl || !itemSel) return;
+    const selectedCat = catEl.value;
+    if (!selectedCat) { if (itemGroup) itemGroup.style.display = 'none'; return; }
+    if (itemGroup) itemGroup.style.display = 'block';
+    const filtered = inventoryData.filter(i => i.category === selectedCat);
+    itemSel.innerHTML = '<option value="">— оберіть матеріали —</option>';
+    filtered.forEach(item => {
+        const o = document.createElement('option'); o.value = item.name;
+        o.textContent = item.name + ' (залишок: ' + item.quantity + ' ' + item.unit + ')'; itemSel.appendChild(o);
+    });
+    if (prefix === 'iss') updateBalanceBadge();
+}
+
+function updateBalanceBadge() {
+    const itemEl = document.getElementById('iss-item');
+    const badge = document.getElementById('iss-balance-badge');
+    const val = document.getElementById('iss-balance-val');
+    if (!itemEl || !badge) return;
+    const item = inventoryData.find(i => i.name === itemEl.value);
+    if (item) { badge.style.display = 'block'; if (val) val.textContent = item.quantity + ' ' + item.unit; }
+    else { badge.style.display = 'none'; }
+}
+
+async function submitInvTransaction(type) {
+    const prefix = type === 'arrival' ? 'arr' : 'iss';
+    const catEl = document.getElementById(prefix + '-category');
+    const itemEl = document.getElementById(prefix + '-item');
+    const qtyEl = document.getElementById(prefix + '-qty');
+    const dateEl = document.getElementById(prefix + '-date');
+    if (!catEl.value || !itemEl.value || !qtyEl.value) { tg.showAlert('Заповніть всі поля!'); return; }
+    const payload = {
+        action: 'transaction', type: type === 'arrival' ? 'Прихід' : 'Видача',
+        category: catEl.value, name: itemEl.value, quantity: qtyEl.value,
+        recipient: type === 'issuance' ? (document.getElementById('iss-recipient') ? document.getElementById('iss-recipient').value : '') : '',
+        operationDate: dateEl ? dateEl.value : '', telegramId: currentUserTgId
+    };
+    tg.MainButton.showProgress();
+    try {
+        await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+        tg.showAlert('✅ ' + (type === 'arrival' ? 'Прихід' : 'Видачу') + ' записано!');
+        document.getElementById('form-' + (type === 'arrival' ? 'arrival' : 'issuance')).reset();
+        const ig = document.getElementById(prefix + '-item-group'); if (ig) ig.style.display = 'none';
+        if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+        loadAllData();
+    } catch (e) { tg.showAlert('Помилка збереження.'); } finally { tg.MainButton.hideProgress(); }
+}
+
+function openAddMaterialModal() { const modal = document.getElementById('modal-add'); if (modal) modal.style.display = 'flex'; }
+
+async function submitNewMaterial() {
+    const cat = document.getElementById('input-category');
+    const name = document.getElementById('input-name');
+    const unit = document.getElementById('input-unit');
+    if (!cat || !name || !unit || !name.value || !unit.value) { tg.showAlert('Заповніть всі поля!'); return; }
+    const payload = { action: 'addMaterial', category: cat.value, name: name.value, unit: unit.value, telegramId: currentUserTgId };
+    tg.MainButton.showProgress();
+    try {
+        await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+        tg.showAlert('✅ Матеріал додано!');
+        document.getElementById('modal-add').style.display = 'none';
+        document.getElementById('form-add-material').reset();
+        loadAllData();
+    } catch (e) { tg.showAlert('Помилка'); } finally { tg.MainButton.hideProgress(); }
+}
+
+function populateSelects() {
+    const gardenSel = document.getElementById('wiz-garden');
+    if (gardenSel) { gardenSel.innerHTML = '<option value="">- оберіть -</option>'; (refData.gardens || []).forEach(g => { const o = document.createElement('option'); o.value = g; o.textContent = g; gardenSel.appendChild(o); }); }
+    const tractorSel = document.getElementById('wiz-tractor');
+    if (tractorSel) { tractorSel.innerHTML = '<option value="">- оберіть -</option>'; (refData.machinery || []).forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; tractorSel.appendChild(o); }); }
+    const implSel = document.getElementById('wiz-implement');
+    if (implSel) { implSel.innerHTML = '<option value="">- оберіть -</option>'; (refData.implements || []).forEach(i => { const o = document.createElement('option'); o.value = i; o.textContent = i; implSel.appendChild(o); }); }
+    const pestSel = document.getElementById('wiz-pest-select');
+    if (pestSel) { pestSel.innerHTML = '<option value="">- оберіть -</option>'; (refData.pesticides || []).forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; pestSel.appendChild(o); }); }
+    const brigSel = document.getElementById('wiz-brigade');
+    if (brigSel) { const brigades = [...new Set((refData.personnel || []).map(p => p.category).filter(Boolean))]; brigSel.innerHTML = '<option value="">всі працівники</option>'; brigades.forEach(b => { const o = document.createElement('option'); o.value = b; o.textContent = b; brigSel.appendChild(o); }); }
+    const repWorker = document.getElementById('rep-worker');
+    if (repWorker) { repWorker.innerHTML = '<option value="">— Всі працівники —</option>'; (refData.personnel || []).forEach(p => { const o = document.createElement('option'); o.value = p.name; o.textContent = p.name + (p.category ? ' (' + p.category + ')' : ''); repWorker.appendChild(o); }); }
+}
+
+function startWizard(type) {
+    currentTaskType = type; currentWizStep = 1; selectedWorkers = []; taskPesticides = [];
+    const dash = document.getElementById('tasks-dashboard'); const wiz = document.getElementById('task-wizard');
+    if (dash) dash.style.display = 'none'; if (wiz) wiz.style.display = 'block';
+    const isMech = type.includes('mechanized');
+    const manSec = document.getElementById('wiz-manual-section'); const mechSec = document.getElementById('wiz-mech-section'); const opWrap = document.getElementById('wiz-operator-wrap');
+    if (manSec) manSec.style.display = isMech ? 'none' : 'block';
+    if (mechSec) mechSec.style.display = isMech ? 'block' : 'none';
+    if (opWrap) opWrap.style.display = type.includes('operator') ? 'block' : 'none';
+    const wizDate = document.getElementById('wiz-date');
+    if (wizDate && !wizDate.value) wizDate.value = new Date().toISOString().split('T')[0];
+    const wt = refData.workTypes || [];
+    const filteredWt = wt.filter(w => isMech ? w.category !== 'Ручна' : w.category === 'Ручна');
+    const wSel = document.getElementById('wiz-workType');
+    if (wSel) { wSel.innerHTML = '<option value="">- оберіть роботу -</option>'; filteredWt.forEach(w => { const o = document.createElement('option'); o.value = w.name; o.textContent = w.name; wSel.appendChild(o); }); }
+    const personnel = refData.personnel || [];
+    ['wiz-driver', 'wiz-operator'].forEach(selId => {
+        const sel = document.getElementById(selId); if (!sel) return;
+        sel.innerHTML = '<option value="">- оберіть -</option>';
+        personnel.forEach(p => { const o = document.createElement('option'); o.value = p.name; o.textContent = p.name; sel.appendChild(o); });
+    });
+    renderWorkerChips(); updateWizView();
+}
+
+function closeWizard() {
+    const dash = document.getElementById('tasks-dashboard'); const wiz = document.getElementById('task-wizard');
+    if (wiz) wiz.style.display = 'none'; if (dash) dash.style.display = 'block';
+}
+function showPesticideChoice() {
+    const dash = document.getElementById('tasks-dashboard'); const pestDash = document.getElementById('pesticides-dashboard');
+    if (dash) dash.style.display = 'none'; if (pestDash) pestDash.style.display = 'block';
+}
+function hidePesticideChoice() {
+    const dash = document.getElementById('tasks-dashboard'); const pestDash = document.getElementById('pesticides-dashboard');
+    if (pestDash) pestDash.style.display = 'none'; if (dash) dash.style.display = 'block';
+}
+
+function renderWorkerChips() {
+    const wrap = document.getElementById('wiz-workers-chips'); if (!wrap) return;
+    wrap.innerHTML = '';
+    const brigade = document.getElementById('wiz-brigade') ? document.getElementById('wiz-brigade').value : '';
+    const list = brigade ? (refData.personnel || []).filter(p => p.category === brigade) : (refData.personnel || []);
+    list.forEach(w => {
+        const c = document.createElement('div');
+        c.className = 'w-chip' + (selectedWorkers.includes(w.name) ? ' selected' : '');
+        c.textContent = w.name;
+        c.onclick = () => { const idx = selectedWorkers.indexOf(w.name); if (idx > -1) selectedWorkers.splice(idx, 1); else selectedWorkers.push(w.name); renderWorkerChips(); };
+        wrap.appendChild(c);
+    });
+}
+function filterWorkersByBrigade() { renderWorkerChips(); }
+function selectAllBrigade() {
+    const brigade = document.getElementById('wiz-brigade') ? document.getElementById('wiz-brigade').value : '';
+    const list = brigade ? (refData.personnel || []).filter(p => p.category === brigade) : (refData.personnel || []);
+    selectedWorkers = list.map(p => p.name); renderWorkerChips();
+}
+
+function wizStep(dir) {
+    const isPest = currentTaskType && currentTaskType.includes('pesticide');
+    const max = isPest ? 4 : 3;
+    if (dir > 0 && currentWizStep >= max) { submitTask(); return; }
+    currentWizStep += dir;
+    if (currentWizStep < 1) { closeWizard(); return; }
+    updateWizView();
+}
+function updateWizView() {
+    document.querySelectorAll('.w-view').forEach(v => v.style.display = 'none');
+    const isPest = currentTaskType && currentTaskType.includes('pesticide');
+    const map = { 1: 'wv-1', 2: 'wv-2', 3: isPest ? 'wv-3' : 'wv-4', 4: 'wv-4' };
+    const viewEl = document.getElementById(map[currentWizStep]); if (viewEl) viewEl.style.display = 'block';
+    const btn = document.getElementById('wiz-next');
+    const isLast = currentWizStep >= (isPest ? 4 : 3);
+    if (btn) btn.innerHTML = isLast ? 'Записати <i class="fas fa-check"></i>' : 'Далі <i class="fas fa-arrow-right"></i>';
+    if (isLast) buildSummary();
+}
+function buildSummary() {
+    const summaryEl = document.getElementById('wiz-summary-content'); if (!summaryEl) return;
+    const dateEl = document.getElementById('wiz-date'); const gardenEl = document.getElementById('wiz-garden');
+    const workEl = document.getElementById('wiz-workType'); const qtyEl = document.getElementById('wiz-qty');
+    summaryEl.innerHTML = '<b>📅 Дата:</b> ' + (dateEl ? dateEl.value : '') + '<br><b>📍 Сад:</b> ' + (gardenEl ? gardenEl.value : '') + '<br><b>🛠 Робота:</b> ' + (workEl ? workEl.value : '') + '<br><b>📏 Обсяг:</b> ' + (qtyEl ? qtyEl.value : '') + '<br><b>👷 Працівники:</b> ' + (selectedWorkers.length > 0 ? selectedWorkers.join(', ') : '—');
+}
+function setWizDate(mode) {
+    const el = document.getElementById('wiz-date'); if (!el) return;
+    const d = new Date(); if (mode === 'yesterday') d.setDate(d.getDate() - 1);
+    el.value = d.toISOString().split('T')[0];
+}
+function addPesticideToTask() {
+    const sel = document.getElementById('wiz-pest-select'); const dose = document.getElementById('wiz-pest-dose'); const vol = document.getElementById('wiz-pest-vol');
+    if (!sel || !sel.value) { tg.showAlert('Оберіть препарат'); return; }
+    taskPesticides.push({ name: sel.value, dose: dose ? dose.value : '', volume: vol ? vol.value : '' });
+    const listEl = document.getElementById('wiz-pest-list');
+    if (listEl) { const item = document.createElement('div'); item.style.cssText = 'padding:6px;background:var(--input-bg);border-radius:6px;margin-bottom:5px;font-size:13px;'; item.textContent = sel.value + ' — ' + (vol ? vol.value : '') + ' л'; listEl.appendChild(item); }
+    if (sel) sel.value = ''; if (dose) dose.value = ''; if (vol) vol.value = '';
+}
+async function submitTask() {
+    if (selectedWorkers.length === 0 && !currentTaskType.includes('mechanized')) { tg.showAlert('Оберіть хоча б одного працівника!'); return; }
+    const payload = {
+        action: 'saveTask', telegramId: currentUserTgId,
+        date: document.getElementById('wiz-date') ? document.getElementById('wiz-date').value : '',
+        garden: document.getElementById('wiz-garden') ? document.getElementById('wiz-garden').value : '',
+        workType: document.getElementById('wiz-workType') ? document.getElementById('wiz-workType').value : '',
+        qty: document.getElementById('wiz-qty') ? document.getElementById('wiz-qty').value : '',
+        taskType: currentTaskType, workers: selectedWorkers.map(n => ({ name: n })),
+        mechanizedDetails: { tractor: document.getElementById('wiz-tractor') ? document.getElementById('wiz-tractor').value : '', driver: document.getElementById('wiz-driver') ? document.getElementById('wiz-driver').value : '', implement: document.getElementById('wiz-implement') ? document.getElementById('wiz-implement').value : '' },
+        pesticideDetails: taskPesticides
+    };
+    tg.MainButton.showProgress();
+    try { await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }); tg.showAlert('✅ Наряд збережено!'); closeWizard(); }
+    catch (e) { tg.showAlert('Помилка збереження'); } finally { tg.MainButton.hideProgress(); }
+}
+
+function updateReportCategories() {
+    const m = document.getElementById('rep-module'); const s = document.getElementById('rep-category'); if (!m || !s) return;
+    s.innerHTML = '';
+    const cats = m.value === 'inventory'
+        ? [['ПММ','ПММ'], ['Пестициди','Пестициди'], ['Добрива','Добрива'], ['Запчастини','Запчастини']]
+        : [['all_work','Всі роботи'], ['manual','Ручні роботи'], ['mechanized','Механізовані'], ['mechanized_operator','З оператором'], ['mechanized_pesticides','ЗЗР (механіз.)'], ['mechanized_pesticides_operator','ЗЗР з операторами']];
+    cats.forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; s.appendChild(o); });
+}
+function setRepDates(mode) {
+    const start = document.getElementById('rep-start-date'); const end = document.getElementById('rep-end-date'); if (!start || !end) return;
+    const now = new Date(); const today = now.toISOString().split('T')[0];
+    if (mode === 'today') { start.value = today; end.value = today; }
+    else if (mode === 'yesterday') { const y = new Date(now); y.setDate(y.getDate() - 1); const yStr = y.toISOString().split('T')[0]; start.value = yStr; end.value = yStr; }
+    else if (mode === 'month') { start.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01'; end.value = today; }
+}
+async function loadReport() {
+    const start = document.getElementById('rep-start-date') ? document.getElementById('rep-start-date').value : '';
+    const end = document.getElementById('rep-end-date') ? document.getElementById('rep-end-date').value : '';
+    const module = document.getElementById('rep-module') ? document.getElementById('rep-module').value : '';
+    const category = document.getElementById('rep-category') ? document.getElementById('rep-category').value : '';
+    const isDetailed = document.getElementById('rep-detailed') ? document.getElementById('rep-detailed').value : 'false';
+    const worker = document.getElementById('rep-worker') ? document.getElementById('rep-worker').value : '';
+    const url = GAS_URL + '?action=getReport&module=' + module + '&category=' + category + '&startDate=' + start + '&endDate=' + end + '&telegramId=' + currentUserTgId + '&isDetailed=' + isDetailed + '&worker=' + encodeURIComponent(worker);
+    tg.MainButton.showProgress();
+    try {
+        const r = await fetch(url); const j = await r.json();
+        if (j.status === 'success') renderReport(j.data); else tg.showAlert('Помилка отримання звіту');
+    } catch (e) { tg.showAlert('Помилка мережі'); } finally { tg.MainButton.hideProgress(); }
+}
+function renderReport(data) {
+    if (!data) return;
+    const thead = document.getElementById('report-thead'); const tbody = document.getElementById('report-tbody');
+    const resultsEl = document.getElementById('report-results'); const emptyEl = document.getElementById('report-empty');
+    if (!thead || !tbody) return;
+    const isAdmin = userAccess && userAccess.role === 'admin';
+    const items = data.items || [];
+    if (items.length === 0) { if (resultsEl) resultsEl.style.display = 'block'; if (emptyEl) emptyEl.style.display = 'block'; tbody.innerHTML = ''; thead.innerHTML = ''; return; }
+    if (emptyEl) emptyEl.style.display = 'none'; if (resultsEl) resultsEl.style.display = 'block';
+    thead.innerHTML = '<th>Дата</th><th>Працівник / Назва</th><th>Вид роботи</th><th>' + (isAdmin ? 'Сума, грн' : 'Обсяг') + '</th>';
+    tbody.innerHTML = '';
+    items.forEach(i => {
+        const r = document.createElement('tr');
+        const col4 = isAdmin ? (i.col4 || i.sum || '') : (i.col3 || i.qty || '');
+        r.innerHTML = '<td>' + (i.col1 || i.date || '') + '</td><td>' + (i.col2 || i.worker || '') + '</td><td>' + (i.col3 || i.work || '') + '</td><td>' + col4 + '</td>';
+        tbody.appendChild(r);
+    });
+}
+    </script>
+</body>
+</html>
