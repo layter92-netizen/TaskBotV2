@@ -602,12 +602,18 @@ function buildSummary() {
         (taskPesticides.length > 0 ? '<b>🧪 Препарати:</b> ' + taskPesticides.map(p => p.name).join(', ') : '');
 }
 
-function setWizDate(mode) {
+function setWizDate(mode, btn) {
     const el = document.getElementById('wiz-date');
     if (!el) return;
     const d = new Date();
     if (mode === 'yesterday') d.setDate(d.getDate() - 1);
     el.value = d.toISOString().split('T')[0];
+    
+    // Toggle active state
+    if (btn && btn.parentNode) {
+        btn.parentNode.querySelectorAll('.date-chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+    }
 }
 
 function addPesticideToTask() {
@@ -670,7 +676,7 @@ function updateReportCategories() {
     cats.forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; s.appendChild(o); });
 }
 
-function setRepDates(mode) {
+function setRepDates(mode, btn) {
     const start = document.getElementById('rep-start-date');
     const end = document.getElementById('rep-end-date');
     if (!start || !end) return;

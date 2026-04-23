@@ -483,3 +483,92 @@ input:focus, select:focus, textarea:focus {
 @media (min-width: 600px) {
     .app-container { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
 }
+
+/* --- Date Helpers & Chips --- */
+.date-helpers {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.date-chip, .w-chip {
+    padding: 8px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    color: var(--text-main);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.date-chip:active, .w-chip:active {
+    transform: scale(0.95);
+    background: var(--bg-input);
+}
+
+.date-chip:hover, .w-chip:hover {
+    border-color: var(--primary);
+    background: var(--bg-input);
+}
+
+.date-chip.active, .w-chip.selected {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.chips-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+/* Specific button in report dashboard */
+.btn-report {
+    background: linear-gradient(135deg, var(--primary), #34d399);
+    height: 70px;
+    font-size: 18px;
+    border-radius: var(--radius-lg) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: white;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
+    width: 100%;
+}
+
+.summary-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.summary-card {
+    background: var(--bg-card);
+    padding: 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    text-align: center;
+}
+
+.summary-val {
+    display: block;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.summary-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
