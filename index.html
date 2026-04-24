@@ -443,12 +443,12 @@
                         <div id="report-empty" style="display:none; text-align:center; padding: 20px; color: var(--text-muted);">
                             Дані відсутні за обраними критеріями
                         </div>
-                        <div style="display: flex; gap: 10px; margin-top: 15px;">
-                            <button class="btn btn-outline" id="btn-clear-report" onclick="clearReport()" style="flex:1; display: none; color: var(--danger); border-color: var(--danger);">
+                        <div class="action-buttons-wrap">
+                            <button class="btn-action btn-danger-soft" id="btn-clear-report" onclick="clearReport()" style="display: none;">
                                 <i class="fas fa-trash-alt"></i> Скинути
                             </button>
-                            <button class="btn btn-outline" id="btn-download-excel" onclick="downloadExcel()" style="flex:2; display: none;">
-                                <span class="tg-icon" style="font-size:16px; margin:0 5px 0 0;">📥</span> Завантажити в Excel
+                            <button class="btn-action btn-excel" id="btn-download-excel" onclick="downloadExcel()" style="display: none;">
+                                <i class="fas fa-file-excel"></i> В Excel
                             </button>
                         </div>
                     </div>
