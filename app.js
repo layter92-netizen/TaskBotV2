@@ -743,6 +743,18 @@ function updateReportCategories() {
     if (Array.from(t.options).some(o => o.value === prevType)) t.value = prevType;
 }
 
+function clearReport() {
+    const resultsEl = document.getElementById('report-results');
+    const thead = document.getElementById('report-thead');
+    const tbody = document.getElementById('report-tbody');
+    const summaryCard = document.getElementById('report-summary');
+    
+    if (resultsEl) resultsEl.style.display = 'none';
+    if (summaryCard) summaryCard.style.display = 'none';
+    if (thead) thead.innerHTML = '';
+    if (tbody) tbody.innerHTML = '';
+}
+
 function setRepDates(mode, btn) {
     const start = document.getElementById('rep-start-date');
     const end = document.getElementById('rep-end-date');
@@ -788,6 +800,7 @@ function renderReport(data) {
     const resultsEl = document.getElementById('report-results');
     const emptyEl = document.getElementById('report-empty');
     const btnExcel = document.getElementById('btn-download-excel');
+    const btnClear = document.getElementById('btn-clear-report');
     
     if (!thead || !tbody) return;
 
@@ -798,13 +811,18 @@ function renderReport(data) {
         if (resultsEl) resultsEl.style.display = 'block';
         if (emptyEl) emptyEl.style.display = 'block';
         if (btnExcel) btnExcel.style.display = 'none';
+        if (btnClear) btnClear.style.display = 'none';
         tbody.innerHTML = '';
         thead.innerHTML = '';
         return;
     }
+    
+    tbody.innerHTML = ''; // IMPORTANT: Clear previous results!
+    
     if (emptyEl) emptyEl.style.display = 'none';
     if (resultsEl) resultsEl.style.display = 'block';
     if (btnExcel) btnExcel.style.display = 'block';
+    if (btnClear) btnClear.style.display = 'block';
 
     const module = document.getElementById('rep-module') ? document.getElementById('rep-module').value : '';
     const isDetailed = document.getElementById('rep-detailed') ? document.getElementById('rep-detailed').value : 'summary';

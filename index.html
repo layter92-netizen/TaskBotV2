@@ -443,9 +443,14 @@
                         <div id="report-empty" style="display:none; text-align:center; padding: 20px; color: var(--text-muted);">
                             Дані відсутні за обраними критеріями
                         </div>
-                        <button class="btn btn-outline" id="btn-download-excel" onclick="downloadExcel()" style="width: 100%; margin-top: 15px; display: none;">
-                            <span class="tg-icon" style="font-size:16px; margin:0 5px 0 0;">📥</span> Завантажити в Excel
-                        </button>
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button class="btn btn-outline" id="btn-clear-report" onclick="clearReport()" style="flex:1; display: none; color: var(--danger); border-color: var(--danger);">
+                                <i class="fas fa-trash-alt"></i> Скинути
+                            </button>
+                            <button class="btn btn-outline" id="btn-download-excel" onclick="downloadExcel()" style="flex:2; display: none;">
+                                <span class="tg-icon" style="font-size:16px; margin:0 5px 0 0;">📥</span> Завантажити в Excel
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
