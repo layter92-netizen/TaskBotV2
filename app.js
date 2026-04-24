@@ -692,7 +692,14 @@ async function submitTask() {
 function updateReportCategories() {
     const m = document.getElementById('rep-module');
     const s = document.getElementById('rep-category');
+    const wWrap = document.getElementById('rep-worker-wrap');
+    
     if (!m || !s) return;
+    
+    if (wWrap) {
+        wWrap.style.display = m.value === 'tasks' ? 'block' : 'none';
+    }
+    
     s.innerHTML = '';
     const cats = m.value === 'inventory'
         ? [['ПММ','ПММ'], ['Пестициди','Пестициди'], ['Добрива','Добрива'], ['Запчастини','Запчастини']]
