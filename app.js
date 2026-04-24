@@ -692,19 +692,32 @@ async function submitTask() {
 function updateReportCategories() {
     const m = document.getElementById('rep-module');
     const s = document.getElementById('rep-category');
+    const t = document.getElementById('rep-detailed');
     const wWrap = document.getElementById('rep-worker-wrap');
     
-    if (!m || !s) return;
+    if (!m || !s || !t) return;
     
     if (wWrap) {
         wWrap.style.display = m.value === 'tasks' ? 'block' : 'none';
     }
     
+    // Update Categories
     s.innerHTML = '';
     const cats = m.value === 'inventory'
-        ? [['ПММ','ПММ'], ['Пестициди','Пестициди'], ['Добрива','Добрива'], ['Запчастини','Запчастини']]
+        ? [['ПММ','ПММ'], ['Пестициди','Пестициди'], ['Добрива','Добрива'], ['Запчастини','Запчастини'], ['Склад','Інше']]
         : [['all_work','Всі роботи'], ['manual','Ручні роботи'], ['mechanized','Механізовані'], ['mechanized_operator','З оператором'], ['mechanized_pesticides','ЗЗР (механіз.)'], ['mechanized_pesticides_operator','ЗЗР з операторами']];
-    cats.forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; s.appendChild(o); });
+    cats.forEach(([v, text]) => { const o = document.createElement('option'); o.value = v; o.textContent = text; s.appendChild(o); });
+
+    // Update Report Types
+    const prevType = t.value;
+    t.innerHTML = '';
+    const types = m.value === 'inventory'
+        ? [['false', 'Залишки на складі (Сальдо)'], ['true', 'Історія рухів (Детально)']]
+        : [['false', 'Загальний (Підсумки)'], ['true', 'Деталізований (по днях/операціях)']];
+    types.forEach(([v, text]) => { const o = document.createElement('option'); o.value = v; o.textContent = text; t.appendChild(o); });
+    
+    // Maintain selection if possible
+    if (Array.from(t.options).some(o => o.value === prevType)) t.value = prevType;
 }
 
 function setRepDates(mode, btn) {
@@ -747,6 +760,8 @@ function renderReport(data) {
     const tbody = document.getElementById('report-tbody');
     const resultsEl = document.getElementById('report-results');
     const emptyEl = document.getElementById('report-empty');
+    const btnExcel = document.getElementById('btn-download-excel');
+    
     if (!thead || !tbody) return;
 
     const isAdmin = userAccess && userAccess.role === 'admin';
@@ -755,12 +770,14 @@ function renderReport(data) {
     if (items.length === 0) {
         if (resultsEl) resultsEl.style.display = 'block';
         if (emptyEl) emptyEl.style.display = 'block';
+        if (btnExcel) btnExcel.style.display = 'none';
         tbody.innerHTML = '';
         thead.innerHTML = '';
         return;
     }
     if (emptyEl) emptyEl.style.display = 'none';
     if (resultsEl) resultsEl.style.display = 'block';
+    if (btnExcel) btnExcel.style.display = 'block';
 
     const module = document.getElementById('rep-module') ? document.getElementById('rep-module').value : '';
     const isDetailed = document.getElementById('rep-detailed') ? document.getElementById('rep-detailed').value : 'false';
@@ -822,6 +839,48 @@ function renderReport(data) {
     });
 }
 
+function downloadExcel() {
+    const table = document.getElementById('report-table');
+    if (!table) return;
+    
+    // Add BOM for UTF-8 so Excel displays Cyrillic correctly
+    let csv = '\uFEFF'; 
+    let rows = table.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        let rowData = [];
+        let cols = row.querySelectorAll('th, td');
+        cols.forEach(col => {
+            // Remove br tags and replace with space, strip inner tags
+            let text = col.innerHTML.replace(/<br\s*[\/]?>/gi, " ");
+            let tempDiv = document.createElement("div");
+            tempDiv.innerHTML = text;
+            text = tempDiv.textContent || tempDiv.innerText || "";
+            // Escape quotes
+            text = text.replace(/"/g, '""');
+            // Enclose in quotes
+            rowData.push('"' + text.trim() + '"');
+        });
+        csv += rowData.join(';') + '\n';
+    });
+
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const fileName = 'Звіт_TaskBot_' + dateStr + '.csv';
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", fileName);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
 // Глобальний експорт
 window.copyMyId = copyMyId;
 window.loadAllData = loadAllData;
@@ -848,3 +907,4 @@ window.verifyPin = verifyPin;
 window.updateReportCategories = updateReportCategories;
 window.setRepDates = setRepDates;
 window.loadReport = loadReport;
+window.downloadExcel = downloadExcel;
