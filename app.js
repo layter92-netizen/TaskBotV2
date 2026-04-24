@@ -485,9 +485,14 @@ function startWizard(type) {
     const wt = refData.workTypes || [];
     const filteredWt = wt.filter(w => isMech ? w.category !== 'Ручна' : w.category === 'Ручна');
     const wSel = document.getElementById('wiz-workType');
+    const wOpMainSel = document.getElementById('wiz-op-main-work');
     if (wSel) {
         wSel.innerHTML = '<option value="">- оберіть роботу -</option>';
         filteredWt.forEach(w => { const o = document.createElement('option'); o.value = w.name; o.textContent = w.name; wSel.appendChild(o); });
+    }
+    if (wOpMainSel) {
+        wOpMainSel.innerHTML = '<option value="">- оберіть або як у тракториста -</option>';
+        filteredWt.forEach(w => { const o = document.createElement('option'); o.value = w.name; o.textContent = w.name; wOpMainSel.appendChild(o); });
     }
 
     // Заповнюємо водіїв/операторів
@@ -517,6 +522,7 @@ function startWizard(type) {
 
 function addWizOperator() {
     const sel = document.getElementById('wiz-operator');
+    const mainWorkSel = document.getElementById('wiz-op-main-work');
     const qty = document.getElementById('wiz-op-qty');
     const hrs = document.getElementById('wiz-op-hrs');
     const work = document.getElementById('wiz-op-work');
@@ -525,6 +531,7 @@ function addWizOperator() {
     
     taskOperators.push({
         name: sel.value,
+        mainWork: mainWorkSel ? mainWorkSel.value : '',
         qty: qty ? qty.value : '',
         hrs: hrs ? hrs.value : '',
         work: work ? work.value : ''
@@ -532,6 +539,7 @@ function addWizOperator() {
     
     // Очищуємо поля
     if (sel) sel.value = '';
+    if (mainWorkSel) mainWorkSel.value = '';
     if (qty) qty.value = '';
     if (hrs) hrs.value = '';
     if (work) work.value = '';
@@ -554,13 +562,17 @@ function renderOperatorList() {
         item.style.cssText = 'padding:10px; background:var(--bg-input); border-radius:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border);';
         
         let details = [];
-        if (op.qty) details.push(op.qty + ' од.');
-        if (op.hrs) details.push(op.hrs + ' год. (' + op.work + ')');
+        let mainTxt = 'Осн. обсяг';
+        if (op.mainWork) mainTxt = op.mainWork;
+        if (op.qty) details.push(op.qty + ' од. (' + mainTxt + ')');
+        else if (op.mainWork) details.push('(' + mainTxt + ')');
+        
+        if (op.hrs) details.push(op.hrs + ' год. (' + (op.work || 'дод. години') + ')');
         
         item.innerHTML = `
             <div>
                 <div style="font-weight:600; font-size:14px;">${op.name}</div>
-                <div style="font-size:12px; color:var(--text-muted);">${details.join(' | ') || 'Основний обсяг'}</div>
+                <div style="font-size:12px; color:var(--text-muted);">${details.join('<br>') || 'Основний вид роботи'}</div>
             </div>
             <button onclick="removeWizOperator(${idx})" style="background:none; border:none; color:#ef4444; padding:5px; cursor:pointer;">
                 <i class="fas fa-times-circle"></i>

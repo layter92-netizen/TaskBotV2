@@ -7,8 +7,8 @@
     <!-- Підключення Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=151">
-    <link rel="stylesheet" href="icons_embed.css?v=151">
+    <link rel="stylesheet" href="style.css?v=152">
+    <link rel="stylesheet" href="icons_embed.css?v=152">
     <!-- Іконки -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -288,6 +288,10 @@
                                             <select id="wiz-operator"><option value="">- оберіть оператора -</option></select>
                                         </div>
                                         <div class="input-group" style="margin-bottom:10px;">
+                                            <label>Вид основної роботи оператора</label>
+                                            <select id="wiz-op-main-work"><option value="">- оберіть або як у тракториста -</option></select>
+                                        </div>
+                                        <div class="input-group" style="margin-bottom:10px;">
                                             <label>Обсяг оператора (якщо відрізняється)</label>
                                             <input type="number" id="wiz-op-qty" placeholder="0.0" step="0.1" inputmode="decimal">
                                         </div>
@@ -540,6 +544,6 @@
     <!-- Контейнер повідомлень -->
     <div id="toast-container"></div>
 
-    <script src="app.js?v=151"></script>
+    <script src="app.js?v=152"></script>
 </body>
 </html>
