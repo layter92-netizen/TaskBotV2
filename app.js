@@ -423,6 +423,19 @@ function populateSelects() {
         });
     }
 
+    // Бригади для звіту
+    const repBrigade = document.getElementById('rep-brigade');
+    if (repBrigade) {
+        const brigades = [...new Set((refData.personnel || []).map(p => p.category).filter(Boolean))];
+        repBrigade.innerHTML = '<option value="">— Всі бригади —</option>';
+        brigades.sort().forEach(b => {
+            const o = document.createElement('option');
+            o.value = b;
+            o.textContent = b;
+            repBrigade.appendChild(o);
+        });
+    }
+
     // Додаємо отримувачів для видачі на складі
     const issRecipient = document.getElementById('iss-recipient');
     if (issRecipient) {
@@ -704,12 +717,12 @@ function updateReportCategories() {
     const s = document.getElementById('rep-category');
     const t = document.getElementById('rep-detailed');
     const wWrap = document.getElementById('rep-worker-wrap');
+    const bWrap = document.getElementById('rep-brigade-wrap');
     
     if (!m || !s || !t) return;
     
-    if (wWrap) {
-        wWrap.style.display = m.value === 'tasks' ? 'block' : 'none';
-    }
+    if (wWrap) wWrap.style.display = m.value === 'tasks' ? 'block' : 'none';
+    if (bWrap) bWrap.style.display = m.value === 'tasks' ? 'block' : 'none';
     
     // Update Categories
     s.innerHTML = '';
@@ -754,7 +767,8 @@ async function loadReport() {
     const category = document.getElementById('rep-category') ? document.getElementById('rep-category').value : '';
     const isDetailed = document.getElementById('rep-detailed') ? document.getElementById('rep-detailed').value : 'summary';
     const worker = document.getElementById('rep-worker') ? document.getElementById('rep-worker').value : '';
-    const url = GAS_URL + '?action=getReport&module=' + module + '&category=' + category + '&startDate=' + start + '&endDate=' + end + '&telegramId=' + currentUserTgId + '&isDetailed=' + isDetailed + '&worker=' + encodeURIComponent(worker);
+    const brigade = document.getElementById('rep-brigade') ? document.getElementById('rep-brigade').value : '';
+    const url = GAS_URL + '?action=getReport&module=' + module + '&category=' + category + '&startDate=' + start + '&endDate=' + end + '&telegramId=' + currentUserTgId + '&isDetailed=' + isDetailed + '&worker=' + encodeURIComponent(worker) + '&brigade=' + encodeURIComponent(brigade);
     tg.MainButton.showProgress();
     try {
         const r = await fetch(url);
@@ -811,6 +825,32 @@ function renderReport(data) {
     let theadHTML = '';
     heads.forEach(h => theadHTML += '<th>' + h + '</th>');
     thead.innerHTML = theadHTML;
+    
+    if (data.type === 'calendar') {
+        const dates = data.dates || [];
+        
+        let th = `<th style="position:sticky; left:0; z-index:2; background:var(--bg-color); min-width:150px;">Працівник</th>`;
+        dates.forEach(d => th += `<th>${d}</th>`);
+        th += `<th>Днів</th><th>Годин</th><th>Зароблено</th><th>На руки (чистими)</th>`;
+        thead.innerHTML = th;
+        
+        items.forEach(i => {
+           let tr = document.createElement('tr');
+           let td = `<td style="position:sticky; left:0; z-index:1; background:var(--surface-color); font-weight:bold; white-space:nowrap;">${i.worker}<br><small style="font-weight:normal; color:var(--text-muted);">${i.brigade}</small></td>`;
+           dates.forEach(d => {
+               td += `<td style="text-align:center;">${i[d] || '-'}</td>`;
+           });
+           td += `<td style="text-align:center; font-weight:bold;">${i.totalDays}</td>
+                  <td style="text-align:center;">${i.totalHours}</td>
+                  <td style="text-align:right; font-weight:bold;">${i.gross}</td>
+                  <td style="text-align:right; color:var(--primary); font-weight:bold;">${i.net}</td>`;
+           tr.innerHTML = td;
+           tbody.appendChild(tr);
+        });
+        
+        // Horizontal scroll container styling is already expected to be handled globally
+        return;
+    }
     
     if (data.type === 'payroll') {
         thead.innerHTML = '<th>Дата / Робота</th><th>Працівник</th><th>Брутто</th><th>На руки / Витрати</th>';
