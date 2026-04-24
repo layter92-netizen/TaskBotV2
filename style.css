@@ -287,6 +287,41 @@ body {
 .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text-main); }
 .btn-secondary { background: var(--bg-input); color: var(--text-main); }
 
+/* --- Secondary Action Buttons --- */
+.action-buttons-wrap {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    justify-content: flex-end;
+}
+
+.btn-action {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.btn-action:active { transform: scale(0.95); }
+
+.btn-danger-soft {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+.btn-danger-soft:hover { background: rgba(239, 68, 68, 0.2); }
+
+.btn-excel {
+    background: #107c41;
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 124, 65, 0.25);
+}
+.btn-excel:hover { background: #0e6e39; }
+
 .icon-btn {
     width: 40px;
     height: 40px;
