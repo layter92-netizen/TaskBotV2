@@ -396,13 +396,22 @@ function populateSelects() {
             const o = document.createElement('option'); o.value = i; o.textContent = i; implSel.appendChild(o);
         });
     }
-    // Пестициди
+    // Пестициди та Добрива зі СКЛАДУ
     const pestSel = document.getElementById('wiz-pest-select');
     if (pestSel) {
-        pestSel.innerHTML = '<option value="">- оберіть -</option>';
-        (refData.pesticides || []).forEach(p => {
-            const o = document.createElement('option'); o.value = p; o.textContent = p; pestSel.appendChild(o);
-        });
+        pestSel.innerHTML = '<option value="">- оберіть зі складу -</option>';
+        if (typeof inventoryData !== 'undefined' && inventoryData.length > 0) {
+            let invPests = inventoryData.filter(i => 
+                i.category === 'Пестициди' || 
+                i.category === 'Добрива' || 
+                i.category === 'Мікродобрива' || 
+                i.category === 'Зрошення мат.'
+            );
+            let uniquePests = [...new Set(invPests.map(i => i.name))].sort();
+            uniquePests.forEach(p => {
+                const o = document.createElement('option'); o.value = p; o.textContent = p; pestSel.appendChild(o);
+            });
+        }
     }
     // Бригади для фільтру
     const brigSel = document.getElementById('wiz-brigade');
