@@ -762,13 +762,62 @@ function renderReport(data) {
     if (emptyEl) emptyEl.style.display = 'none';
     if (resultsEl) resultsEl.style.display = 'block';
 
-    // Для стандартних звітів
-    thead.innerHTML = '<th>Дата</th><th>Працівник / Назва</th><th>Вид роботи</th><th>' + (isAdmin ? 'Сума, грн' : 'Обсяг') + '</th>';
+    const module = document.getElementById('rep-module') ? document.getElementById('rep-module').value : '';
+    const isDetailed = document.getElementById('rep-detailed') ? document.getElementById('rep-detailed').value : 'false';
+    
+    // Dynamic Headers based on report context
+    let heads = [];
+    if (module === 'inventory') {
+        if (isDetailed === 'true') heads = ['Дата', 'Назва (Матеріал)', 'Тип операції', 'Об\'єм'];
+        else heads = ['Назва (Матеріал)', 'Надходження', 'Витрачено', 'Баланс (Різниця)'];
+    } else {
+        if (isDetailed === 'true') heads = ['Дата', 'Працівник', 'Вид роботи (Обсяг)', isAdmin ? 'Сума, грн' : '-'];
+        else heads = ['Працівник / Бригада', '-', 'Разом обсяг', isAdmin ? 'Всього сума, грн' : '-'];
+    }
+
+    // Render Headers
+    let theadHTML = '';
+    heads.forEach(h => theadHTML += '<th>' + h + '</th>');
+    thead.innerHTML = theadHTML;
+    
+    // Render Rows
     tbody.innerHTML = '';
+    
+    if (data.type === 'calendar') {
+        // Special case handling for calendar or payroll could be added here
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Для цього типу звіту потрібен розширений інтерфейс (невдовзі).</td></tr>';
+        return;
+    }
+    
+    if (data.type === 'payroll') {
+        thead.innerHTML = '<th>Працівник</th><th>Брутто</th><th>Податки</th><th>На руки (Нетто)</th>';
+        items.forEach(i => {
+            const r = document.createElement('tr');
+            r.innerHTML = `<td>${i.worker}<br><small style="color:var(--text-muted);">${i.brigade}</small></td><td>${i.brutto}</td><td style="color:#ef4444;">- ПДФО: ${i.pit}<br>- ВЗ: ${i.military}</td><td style="font-weight:bold; color:var(--primary);">${i.net}</td>`;
+            tbody.appendChild(r);
+        });
+        return;
+    }
+
     items.forEach(i => {
         const r = document.createElement('tr');
-        const col4 = isAdmin ? (i.col4 || i.sum || '') : (i.col3 || i.qty || '');
-        r.innerHTML = '<td>' + (i.col1 || i.date || '') + '</td><td>' + (i.col1 || i.worker || i.col2 || '') + '</td><td>' + (i.col2 || i.work || i.col3 || '') + '</td><td>' + col4 + '</td>';
+        
+        let c1 = '', c2 = '', c3 = '', c4 = '';
+        if (module === 'inventory') {
+            if (isDetailed === 'true') { c1 = i.col1; c2 = i.col2; c3 = i.col3; c4 = i.col4; }
+            else { c1 = i.col1; c2 = `<span style="color:var(--primary);">${i.col2}</span>`; c3 = `<span style="color:#ef4444;">${i.col3}</span>`; c4 = `<b>${i.col4}</b>`; }
+        } else {
+            if (isDetailed === 'true') { 
+                c1 = i.col1; c2 = i.col2 + (i.brigade ? `<br><small style="color:var(--text-muted);">${i.brigade}</small>` : ''); 
+                c3 = i.col3; c4 = isAdmin ? i.col4 : '-'; 
+            }
+            else { 
+                c1 = i.col1 + (i.brigade ? `<br><small style="color:var(--text-muted);">${i.brigade}</small>` : ''); 
+                c2 = '-'; c3 = i.col3; c4 = isAdmin ? i.col4 : '-'; 
+            }
+        }
+        
+        r.innerHTML = `<td>${c1}</td><td>${c2}</td><td>${c3}</td><td style="font-weight:600;">${c4}</td>`;
         tbody.appendChild(r);
     });
 }
