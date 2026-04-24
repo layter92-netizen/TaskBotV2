@@ -722,8 +722,8 @@ function updateReportCategories() {
     const prevType = t.value;
     t.innerHTML = '';
     const types = m.value === 'inventory'
-        ? [['false', 'Залишки на складі (Сальдо)'], ['true', 'Історія рухів (Детально)']]
-        : [['false', 'Загальний (Підсумки)'], ['true', 'Деталізований (по днях/операціях)']];
+        ? [['summary', 'Залишки на складі (Сальдо)'], ['detailed', 'Історія рухів (Детально)']]
+        : [['summary_workers', 'Загальний по працівниках'], ['detailed_workers', 'Деталізований (по днях/операціях)'], ['calendar', 'Календарний (Дні / Години)'], ['summary_works', 'Загальний по видах робіт'], ['payroll', 'Зарплатна відомість']];
     types.forEach(([v, text]) => { const o = document.createElement('option'); o.value = v; o.textContent = text; t.appendChild(o); });
     
     // Maintain selection if possible
@@ -752,7 +752,7 @@ async function loadReport() {
     const end = document.getElementById('rep-end-date') ? document.getElementById('rep-end-date').value : '';
     const module = document.getElementById('rep-module') ? document.getElementById('rep-module').value : '';
     const category = document.getElementById('rep-category') ? document.getElementById('rep-category').value : '';
-    const isDetailed = document.getElementById('rep-detailed') ? document.getElementById('rep-detailed').value : 'false';
+    const isDetailed = document.getElementById('rep-detailed') ? document.getElementById('rep-detailed').value : 'summary';
     const worker = document.getElementById('rep-worker') ? document.getElementById('rep-worker').value : '';
     const url = GAS_URL + '?action=getReport&module=' + module + '&category=' + category + '&startDate=' + start + '&endDate=' + end + '&telegramId=' + currentUserTgId + '&isDetailed=' + isDetailed + '&worker=' + encodeURIComponent(worker);
     tg.MainButton.showProgress();
@@ -793,15 +793,17 @@ function renderReport(data) {
     if (btnExcel) btnExcel.style.display = 'block';
 
     const module = document.getElementById('rep-module') ? document.getElementById('rep-module').value : '';
-    const isDetailed = document.getElementById('rep-detailed') ? document.getElementById('rep-detailed').value : 'false';
+    const isDetailed = document.getElementById('rep-detailed') ? document.getElementById('rep-detailed').value : 'summary';
     
     // Dynamic Headers based on report context
     let heads = [];
     if (module === 'inventory') {
-        if (isDetailed === 'true') heads = ['Дата', 'Назва (Матеріал)', 'Тип операції', 'Об\'єм'];
+        if (isDetailed === 'detailed' || isDetailed === 'true') heads = ['Дата', 'Назва (Матеріал)', 'Тип операції', 'Об\'єм'];
         else heads = ['Назва (Матеріал)', 'Надходження', 'Витрачено', 'Баланс (Різниця)'];
     } else {
-        if (isDetailed === 'true') heads = ['Дата', 'Працівник', 'Вид роботи (Обсяг)', isAdmin ? 'Сума, грн' : '-'];
+        if (isDetailed === 'detailed_workers' || isDetailed === 'true') heads = ['Дата', 'Працівник', 'Вид роботи (Обсяг)', isAdmin ? 'Сума, грн' : '-'];
+        else if (isDetailed === 'calendar') heads = ['Працівник / Бригада', '-', 'Відпрацьовані дні', isAdmin ? 'Загальна сума' : '-'];
+        else if (isDetailed === 'summary_works') heads = ['Вид роботи', '-', 'Загальний обсяг', isAdmin ? 'Втрачено (грн)' : '-'];
         else heads = ['Працівник / Бригада', '-', 'Разом обсяг', isAdmin ? 'Всього сума, грн' : '-'];
     }
 
@@ -810,22 +812,52 @@ function renderReport(data) {
     heads.forEach(h => theadHTML += '<th>' + h + '</th>');
     thead.innerHTML = theadHTML;
     
-    // Render Rows
-    tbody.innerHTML = '';
-    
-    if (data.type === 'calendar') {
-        // Special case handling for calendar or payroll could be added here
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Для цього типу звіту потрібен розширений інтерфейс (невдовзі).</td></tr>';
-        return;
-    }
-    
     if (data.type === 'payroll') {
-        thead.innerHTML = '<th>Працівник</th><th>Брутто</th><th>Податки</th><th>На руки (Нетто)</th>';
+        thead.innerHTML = '<th>Дата / Робота</th><th>Працівник</th><th>Брутто</th><th>На руки / Витрати</th>';
+        
+        let sumBrutto = 0, sumPit = 0, sumMt = 0, sumNet = 0, sumEsv = 0;
+        
         items.forEach(i => {
+            sumBrutto += parseFloat(i.brutto) || 0;
+            sumPit += parseFloat(i.pit) || 0;
+            sumMt += parseFloat(i.military) || 0;
+            sumNet += parseFloat(i.net) || 0;
+            sumEsv += parseFloat(i.esv) || 0;
+            
             const r = document.createElement('tr');
-            r.innerHTML = `<td>${i.worker}<br><small style="color:var(--text-muted);">${i.brigade}</small></td><td>${i.brutto}</td><td style="color:#ef4444;">- ПДФО: ${i.pit}<br>- ВЗ: ${i.military}</td><td style="font-weight:bold; color:var(--primary);">${i.net}</td>`;
+            
+            const workClean = (i.work || '').replace(/\[.*\]\s*/, '');
+            const c1 = `<b>${i.date}</b><br><small style="color:var(--text-muted);">${workClean} (${i.qty})</small>`;
+            const c2 = `${i.worker}<br><small style="color:var(--text-muted);">${i.brigade}</small>`;
+            const c3 = `${i.brutto}`;
+            const c4 = `<span style="font-weight:bold; color:var(--primary); font-size:1.1em;">${i.net} <i class="fas fa-wallet"></i></span><br>
+                <div style="margin-top:4px; padding-top:4px; border-top:1px dashed var(--border-color); color:#ef4444; font-size:0.85em;">- ПДФО: ${i.pit}<br>- ВЗ: ${i.military}</div>
+                <div style="margin-top:2px; color:var(--text-muted); font-size:0.85em;">+ ЄСВ: ${i.esv}</div>`;
+                
+            r.innerHTML = `<td style="vertical-align:middle;">${c1}</td><td style="vertical-align:middle;">${c2}</td><td style="vertical-align:middle; font-weight:600;">${c3}</td><td style="vertical-align:middle;">${c4}</td>`;
             tbody.appendChild(r);
         });
+        
+        const f = document.createElement('tr');
+        f.style.backgroundColor = 'var(--surface-color)';
+        f.style.borderTop = '2px solid var(--border-color)';
+        const totalTaxes = (sumPit + sumMt).toFixed(2);
+        const totalCorp = (sumBrutto + sumEsv).toFixed(2);
+        
+        f.innerHTML = `
+            <td colspan="2" style="text-align:right; font-weight:bold; vertical-align:middle; text-transform:uppercase;">Підсумки за період:</td>
+            <td style="font-weight:bold; font-size:1.1em; vertical-align:middle; color:var(--text-main);">${sumBrutto.toFixed(2)}</td>
+            <td style="font-size:0.9em; padding:10px;">
+                <span style="font-weight:bold; color:var(--primary); font-size:1.2em;">До виплати: ${sumNet.toFixed(2)}</span><br>
+                <div style="margin-top:6px; padding-top:6px; border-top:1px solid var(--border-color);">
+                    <span style="color:#ef4444;">Податки (ПДФО+ВЗ): ${totalTaxes}</span><br>
+                    <span style="color:var(--text-muted);">Нараховано ЄСВ: ${sumEsv.toFixed(2)}</span>
+                </div>
+                <div style="margin-top:6px; padding:6px; background:var(--bg-color); border-radius:6px;">
+                    <b style="color:var(--text-main);">Витрати підприємства: ${totalCorp}</b>
+                </div>
+            </td>`;
+        tbody.appendChild(f);
         return;
     }
 
@@ -834,12 +866,20 @@ function renderReport(data) {
         
         let c1 = '', c2 = '', c3 = '', c4 = '';
         if (module === 'inventory') {
-            if (isDetailed === 'true') { c1 = i.col1; c2 = i.col2; c3 = i.col3; c4 = i.col4; }
+            if (isDetailed === 'detailed' || isDetailed === 'true') { c1 = i.col1; c2 = i.col2; c3 = i.col3; c4 = i.col4; }
             else { c1 = i.col1; c2 = `<span style="color:var(--primary);">${i.col2}</span>`; c3 = `<span style="color:#ef4444;">${i.col3}</span>`; c4 = `<b>${i.col4}</b>`; }
         } else {
-            if (isDetailed === 'true') { 
+            if (isDetailed === 'detailed_workers' || isDetailed === 'true') { 
                 c1 = i.col1; c2 = i.col2 + (i.brigade ? `<br><small style="color:var(--text-muted);">${i.brigade}</small>` : ''); 
                 c3 = i.col3; c4 = isAdmin ? i.col4 : '-'; 
+            }
+            else if (isDetailed === 'calendar') { 
+                c1 = i.col1 + (i.brigade ? `<br><small style="color:var(--text-muted);">${i.brigade}</small>` : ''); 
+                c2 = '-'; c3 = i.col3 + ' днів'; c4 = isAdmin ? i.col4 : '-'; 
+            }
+            else if (isDetailed === 'summary_works') { 
+                c1 = i.col1; 
+                c2 = '-'; c3 = i.col3; c4 = isAdmin ? i.col4 : '-'; 
             }
             else { 
                 c1 = i.col1 + (i.brigade ? `<br><small style="color:var(--text-muted);">${i.brigade}</small>` : ''); 
