@@ -238,8 +238,11 @@ function renderInventory(catFilter) {
     let data = inventoryData;
     if (catFilter && catFilter !== 'all') {
         const mapped = map[catFilter] || catFilter;
-        data = inventoryData.filter(i => i.category === mapped);
+        data = data.filter(i => i.category === mapped);
     }
+    // Фільтр: показувати тільки те, що є в наявності (> 0)
+    data = data.filter(i => (parseFloat(String(i.quantity).replace(',', '.')) || 0) > 0);
+    
     if (data.length === 0) {
         list.innerHTML = '<div class="empty-state"><p>Немає записів</p></div>';
         return;
@@ -262,7 +265,14 @@ function renderItemSelect(prefix) {
     if (!selectedCat) { if (itemGroup) itemGroup.style.display = 'none'; return; }
     if (itemGroup) itemGroup.style.display = 'block';
 
-    const filtered = inventoryData.filter(i => i.category === selectedCat);
+    let filtered = inventoryData.filter(i => i.category === selectedCat);
+    
+    // При видачі (iss) показуємо лише ті матеріали, які є в наявності (> 0)
+    // При приході (arr) показуємо всі
+    if (prefix === 'iss') {
+        filtered = filtered.filter(i => (parseFloat(String(i.quantity).replace(',', '.')) || 0) > 0);
+    }
+    
     itemSel.innerHTML = '<option value="">— оберіть матеріали —</option>';
     filtered.forEach(item => {
         const o = document.createElement('option');
@@ -750,7 +760,10 @@ async function loadReport() {
         const r = await fetch(url);
         const j = await r.json();
         if (j.status === 'success') renderReport(j.data);
-        else tg.showAlert('Помилка отримання звіту');
+        else {
+            console.error("Report Error:", j);
+            tg.showAlert('Помилка: ' + (j.message || 'Невідома помилка сервера'));
+        }
     } catch (e) { tg.showAlert('Помилка мережі'); } finally { tg.MainButton.hideProgress(); }
 }
 
