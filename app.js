@@ -844,7 +844,7 @@ function renderReport(data) {
     } else {
         if (isDetailed === 'detailed_workers' || isDetailed === 'true') heads = ['Дата', 'Працівник', 'Вид роботи (Обсяг)', isAdmin ? 'Сума, грн' : '-'];
         else if (isDetailed === 'calendar') heads = ['Працівник / Бригада', '-', 'Відпрацьовані дні', isAdmin ? 'Загальна сума' : '-'];
-        else if (isDetailed === 'summary_works') heads = ['Вид роботи', 'Загальний обсяг', 'Одиниці виміру', isAdmin ? 'Витрачено, грн' : '-'];
+        else if (isDetailed === 'summary_works') heads = ['Вид роботи', '-', 'Загальний обсяг', isAdmin ? 'Витрачено, грн' : '-'];
         else heads = ['Працівник / Бригада', '-', 'Разом обсяг', isAdmin ? 'Всього сума, грн' : '-'];
     }
 
@@ -946,7 +946,7 @@ function renderReport(data) {
             }
             else if (isDetailed === 'summary_works') { 
                 c1 = i.col1; 
-                c2 = i.col2; c3 = i.col3; c4 = isAdmin ? i.col4 : '-'; 
+                c2 = '-'; c3 = i.col3; c4 = isAdmin ? i.col4 : '-'; 
             }
             else { 
                 c1 = i.col1 + (i.brigade ? `<br><small style="color:var(--text-muted);">${i.brigade}</small>` : ''); 
