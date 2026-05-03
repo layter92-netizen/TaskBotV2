@@ -7,8 +7,8 @@
     <!-- Підключення Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=152">
-    <link rel="stylesheet" href="icons_embed.css?v=152">
+    <link rel="stylesheet" href="style.css?v=153">
+    <link rel="stylesheet" href="icons_embed.css?v=153">
     <!-- Іконки -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -164,6 +164,10 @@
                 <div id="tasks-dashboard">
                     <p class="subtitle" style="margin-bottom: 24px; text-align: center; opacity: 0.8;">Оберіть тип робіт для створення наряду</p>
                     <div class="task-grid">
+                        <button class="tg-btn tg-attendance" onclick="startWizard('attendance')" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none; border-radius: 16px; padding: 16px 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2); transition: all 0.2s ease;">
+                            <span class="tg-icon" style="background: rgba(255,255,255,0.2); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;"><i class="fas fa-clipboard-user"></i></span>
+                            <span class="tg-label" style="font-weight: 600; font-size: 13px;">Табель (присутні)</span>
+                        </button>
                         <button class="tg-btn tg-manual" onclick="startWizard('manual')">
                             <span class="tg-icon"><i class="fas fa-hand-holding-hand"></i></span>
                             <span class="tg-label">Ручні роботи</span>
@@ -231,15 +235,15 @@
                                     </div>
                                     <input type="date" id="wiz-date" required>
                                 </div>
-                                <div class="input-group">
+                                <div class="input-group" id="wrap-wiz-garden">
                                     <label>Сад / Блок (Локація)</label>
                                     <select id="wiz-garden"><option value="">- оберіть -</option></select>
                                 </div>
-                                <div class="input-group">
+                                <div class="input-group" id="wrap-wiz-workType">
                                     <label>Вид роботи</label>
                                     <select id="wiz-workType"><option value="">- оберіть -</option></select>
                                 </div>
-                                <div class="input-group">
+                                <div class="input-group" id="wrap-wiz-qty">
                                     <label id="wiz-qty-label">Обсяг виконаної роботи (га або год)</label>
                                     <input type="number" id="wiz-qty" placeholder="0.0" step="0.1" inputmode="decimal">
                                 </div>
@@ -544,6 +548,6 @@
     <!-- Контейнер повідомлень -->
     <div id="toast-container"></div>
 
-    <script src="app.js?v=152"></script>
+    <script src="app.js?v=153"></script>
 </body>
 </html>

@@ -470,12 +470,24 @@ function startWizard(type) {
     if (wiz) wiz.style.display = 'block';
 
     const isMech = type.includes('mechanized');
+    const isAtt = (type === 'attendance');
     const manSec = document.getElementById('wiz-manual-section');
     const mechSec = document.getElementById('wiz-mech-section');
     const opWrap = document.getElementById('wiz-operator-wrap');
     if (manSec) manSec.style.display = isMech ? 'none' : 'block';
     if (mechSec) mechSec.style.display = isMech ? 'block' : 'none';
     if (opWrap) opWrap.style.display = type.includes('operator') ? 'block' : 'none';
+
+    // Show/Hide fields based on attendance
+    const wGarden = document.getElementById('wrap-wiz-garden');
+    const wWork = document.getElementById('wrap-wiz-workType');
+    const wQty = document.getElementById('wrap-wiz-qty');
+    const wTitle = document.getElementById('wiz-title');
+    
+    if (wGarden) wGarden.style.display = isAtt ? 'none' : 'block';
+    if (wWork) wWork.style.display = isAtt ? 'none' : 'block';
+    if (wQty) wQty.style.display = isAtt ? 'none' : 'block';
+    if (wTitle) wTitle.innerText = isAtt ? 'Табель присутніх' : 'Наряд';
 
     // Встановлюємо сьогоднішню дату
     const wizDate = document.getElementById('wiz-date');
@@ -657,16 +669,26 @@ function buildSummary() {
     const gardenEl = document.getElementById('wiz-garden');
     const workEl = document.getElementById('wiz-workType');
     const qtyEl = document.getElementById('wiz-qty');
+    const commentEl = document.getElementById('wiz-manual-comment');
     const summaryEl = document.getElementById('wiz-summary-content');
     if (!summaryEl) return;
-    summaryEl.innerHTML =
-        '<b>📅 Дата:</b> ' + (dateEl ? dateEl.value : '') + '<br>' +
-        '<b>📍 Сад:</b> ' + (gardenEl ? gardenEl.value : '') + '<br>' +
-        '<b>🛠 Робота:</b> ' + (workEl ? workEl.value : '') + '<br>' +
-        '<b>📏 Обсяг:</b> ' + (qtyEl ? qtyEl.value : '') + '<br>' +
-        (selectedWorkers.length > 0 ? '<b>👷 Працівники:</b> ' + selectedWorkers.join(', ') + '<br>' : '') +
-        (taskOperators.length > 0 ? '<b>🚜 Оператори:</b> ' + taskOperators.map(o => o.name).join(', ') + '<br>' : '') +
-        (taskPesticides.length > 0 ? '<b>🧪 Препарати:</b> ' + taskPesticides.map(p => p.name).join(', ') : '');
+    
+    const isAtt = (currentTaskType === 'attendance');
+    
+    let html = '<b>📅 Дата:</b> ' + (dateEl ? dateEl.value : '') + '<br>';
+    
+    if (!isAtt) {
+        html += '<b>📍 Сад:</b> ' + (gardenEl ? gardenEl.value : '') + '<br>' +
+                '<b>🛠 Робота:</b> ' + (workEl ? workEl.value : '') + '<br>' +
+                '<b>📏 Обсяг:</b> ' + (qtyEl ? qtyEl.value : '') + '<br>';
+    }
+    
+    if (selectedWorkers.length > 0) html += '<b>👷 Працівники (' + (isAtt ? 'Присутні' : 'Залучені') + '):</b> ' + selectedWorkers.join(', ') + '<br>';
+    if (taskOperators.length > 0) html += '<b>🚜 Оператори:</b> ' + taskOperators.map(o => o.name).join(', ') + '<br>';
+    if (taskPesticides.length > 0) html += '<b>🧪 Препарати:</b> ' + taskPesticides.map(p => p.name).join(', ') + '<br>';
+    if (commentEl && commentEl.value) html += '<b>💬 Коментар:</b> ' + commentEl.value;
+    
+    summaryEl.innerHTML = html;
 }
 
 function setWizDate(mode, btn) {
@@ -714,6 +736,8 @@ async function submitTask() {
         garden: document.getElementById('wiz-garden') ? document.getElementById('wiz-garden').value : '',
         workType: document.getElementById('wiz-workType') ? document.getElementById('wiz-workType').value : '',
         qty: document.getElementById('wiz-qty') ? document.getElementById('wiz-qty').value : '',
+        comment: document.getElementById('wiz-manual-comment') ? document.getElementById('wiz-manual-comment').value : '',
+        brigade: document.getElementById('wiz-brigade') ? document.getElementById('wiz-brigade').value : '',
         taskType: currentTaskType,
         workers: selectedWorkers.map(n => ({ name: n })),
         mechanizedDetails: {
