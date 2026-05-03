@@ -7,8 +7,8 @@
     <!-- Підключення Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=153">
-    <link rel="stylesheet" href="icons_embed.css?v=153">
+    <link rel="stylesheet" href="style.css?v=154">
+    <link rel="stylesheet" href="icons_embed.css?v=154">
     <!-- Іконки -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -549,9 +549,20 @@
         </div>
     </div>
 
+    <!-- Модалка списку присутніх -->
+    <div id="modal-admin-attendance" class="modal">
+        <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+            <span class="close-btn">&times;</span>
+            <h2 style="margin-bottom: 5px;">Присутні на роботі</h2>
+            <div id="admin-attendance-content" style="margin-top: 15px;">
+                <!-- Тут буде згенерований список -->
+            </div>
+        </div>
+    </div>
+
     <!-- Контейнер повідомлень -->
     <div id="toast-container"></div>
 
-    <script src="app.js?v=153"></script>
+    <script src="app.js?v=154"></script>
 </body>
 </html>
