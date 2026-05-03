@@ -215,6 +215,16 @@ function applyPermissions() {
     } else if (role === 'brigadier') {
         if (navInv) navInv.style.display = 'none';
     }
+    
+    // Відображення кнопки табеля для адмінів та головних бригадирів
+    const btnAdminAtt = document.getElementById('btn-admin-attendance');
+    if (btnAdminAtt) {
+        if (role === 'admin' || role === 'головний бригадир' || role === 'головний_бригадир') {
+            btnAdminAtt.style.display = 'flex';
+        } else {
+            btnAdminAtt.style.display = 'none';
+        }
+    }
 }
 
 // ── NAVIGATION ──
@@ -1037,6 +1047,63 @@ function downloadExcel() {
     }
 }
 
+// ── ADMIN ATTENDANCE ──
+async function showAdminAttendance() {
+    tg.MainButton.showProgress();
+    const modal = document.getElementById('modal-admin-attendance');
+    const content = document.getElementById('admin-attendance-content');
+    if (!modal || !content) return;
+    
+    content.innerHTML = '<div style="text-align: center; padding: 20px;">Завантаження...</div>';
+    modal.style.display = 'flex';
+    
+    try {
+        const response = await fetch(GAS_URL + '?action=getAttendanceList&telegramId=' + currentUserTgId);
+        const res = await response.json();
+        
+        if (res.status === 'success') {
+            const data = res.data || [];
+            if (data.length === 0) {
+                content.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);">Сьогодні ще нікого не відмітили</div>';
+                return;
+            }
+            
+            // Group by brigade
+            const grouped = {};
+            data.forEach(item => {
+                const b = item.brigade || 'Без бригади';
+                if (!grouped[b]) grouped[b] = [];
+                grouped[b].push(item);
+            });
+            
+            let html = '';
+            for (const [brigade, workers] of Object.entries(grouped)) {
+                html += `<div style="background: var(--card-bg); margin-bottom: 15px; border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden;">
+                            <div style="background: var(--primary); color: white; padding: 10px 15px; font-weight: 600;">
+                                👥 ${brigade} <span style="float: right; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 12px;">${workers.length} чол.</span>
+                            </div>
+                            <div style="padding: 10px 15px;">`;
+                workers.forEach(w => {
+                    const commentHtml = w.comment ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;"><i class="fas fa-comment-dots"></i> ${w.comment}</div>` : '';
+                    html += `<div style="padding: 8px 0; border-bottom: 1px dashed var(--border-color); display: flex; flex-direction: column;">
+                                <div style="font-weight: 500;">${w.worker}</div>
+                                ${commentHtml}
+                             </div>`;
+                });
+                html += `   </div>
+                         </div>`;
+            }
+            content.innerHTML = html;
+        } else {
+            content.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Помилка завантаження даних</div>';
+        }
+    } catch (err) {
+        content.innerHTML = '<div style="text-align: center; padding: 20px; color: #ef4444;">Помилка з\'єднання</div>';
+    } finally {
+        tg.MainButton.hideProgress();
+    }
+}
+
 // Глобальний експорт
 window.copyMyId = copyMyId;
 window.loadAllData = loadAllData;
@@ -1063,4 +1130,5 @@ window.verifyPin = verifyPin;
 window.updateReportCategories = updateReportCategories;
 window.setRepDates = setRepDates;
 window.loadReport = loadReport;
+window.showAdminAttendance = showAdminAttendance;
 window.downloadExcel = downloadExcel;
