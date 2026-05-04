@@ -206,8 +206,10 @@ function applyPermissions() {
     const navInv    = document.getElementById('nav-inventory');
     const navTasks  = document.getElementById('nav-tasks');
     const navReports = document.getElementById('nav-reports');
+    const navAnalytics = document.getElementById('nav-analytics');
 
     [navInv, navTasks, navReports].forEach(n => { if (n) n.style.display = 'flex'; });
+    if (navAnalytics) navAnalytics.style.display = (role === 'admin') ? 'flex' : 'none';
 
     if (role === 'worker') {
         if (navInv) navInv.style.display = 'none';
@@ -234,7 +236,7 @@ function switchGlobalTab(tabId, btnEl) {
     if (target) target.style.display = 'block';
     document.querySelectorAll('.bottom-nav .nav-item').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
-    const titles = { 'tab-inventory': 'Склад', 'tab-tasks': 'Роботи', 'tab-reports': 'Звіти' };
+    const titles = { 'tab-inventory': 'Склад', 'tab-tasks': 'Роботи', 'tab-reports': 'Звіти', 'tab-analytics': 'Аналітика' };
     const titleEl = document.getElementById('app-title');
     if (titleEl) titleEl.textContent = titles[tabId] || 'TaskBot';
 }
@@ -1155,3 +1157,91 @@ window.setRepDates = setRepDates;
 window.loadReport = loadReport;
 window.showAdminAttendance = showAdminAttendance;
 window.downloadExcel = downloadExcel;
+
+// ── ANALYTICS ──
+function updateAnalyticsDates() {
+    const period = document.getElementById('analytics-period').value;
+    const sDate = document.getElementById('analytics-start-date');
+    const eDate = document.getElementById('analytics-end-date');
+    const wrap = document.getElementById('analytics-dates-wrap');
+    if (!sDate || !eDate || !wrap) return;
+    
+    const now = new Date();
+    if (period === 'month') {
+        wrap.style.display = 'flex';
+        sDate.value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+        eDate.value = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+    } else if (period === 'quarter') {
+        wrap.style.display = 'flex';
+        const qMonth = Math.floor(now.getMonth() / 3) * 3;
+        sDate.value = new Date(now.getFullYear(), qMonth, 1).toISOString().split('T')[0];
+        eDate.value = new Date(now.getFullYear(), qMonth + 3, 0).toISOString().split('T')[0];
+    } else if (period === 'all') {
+        wrap.style.display = 'none'; // Ховаємо дати, якщо весь час
+        sDate.value = '';
+        eDate.value = '';
+    } else if (period === 'custom') {
+        wrap.style.display = 'flex';
+        sDate.value = '';
+        eDate.value = '';
+    }
+}
+
+async function loadAnalytics() {
+    const sDate = document.getElementById('analytics-start-date').value;
+    const eDate = document.getElementById('analytics-end-date').value;
+    const period = document.getElementById('analytics-period').value;
+    
+    if (period !== 'all' && (!sDate || !eDate)) {
+        tg.showAlert('Оберіть дати для аналітики!');
+        return;
+    }
+    
+    const url = GAS_URL + '?action=getAnalytics&startDate=' + sDate + '&endDate=' + eDate + '&telegramId=' + currentUserTgId;
+    tg.MainButton.showProgress();
+    try {
+        const r = await fetch(url);
+        const j = await r.json();
+        if (j.status === 'success') {
+            renderAnalytics(j.data);
+            document.getElementById('analytics-results').style.display = 'block';
+        } else {
+            tg.showAlert('Помилка: ' + (j.message || 'Невідома помилка сервера'));
+        }
+    } catch (e) { 
+        tg.showAlert('Помилка мережі'); 
+    } finally { 
+        tg.MainButton.hideProgress(); 
+    }
+}
+
+function renderAnalytics(data) {
+    if (!data) return;
+    document.getElementById('stat-expenses').textContent = data.expenses.toFixed(2);
+    document.getElementById('stat-people').textContent = data.uniquePeople;
+    document.getElementById('stat-mandays').textContent = data.manDays;
+    
+    let fertNum = parseFloat(String(data.fertilizers).replace(',', '.')) || 0;
+    let fertStr = Number.isInteger(fertNum) ? fertNum.toString() : (Math.round(fertNum * 1000) / 1000).toString();
+    document.getElementById('stat-fertilizers').textContent = fertStr;
+    
+    const staffList = document.getElementById('stat-staff-list');
+    staffList.innerHTML = '';
+    if (Object.keys(data.staffCounts).length === 0) {
+        staffList.innerHTML = '<div style="text-align: center; color: var(--text-muted);">Немає даних про штат</div>';
+    } else {
+        // Sort keys to show largest groups first
+        const sortedStaff = Object.entries(data.staffCounts).sort((a, b) => b[1] - a[1]);
+        sortedStaff.forEach(([position, count]) => {
+            staffList.innerHTML += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--input-bg); border-radius: 8px;">
+                    <span style="font-weight: 500; font-size: 14px;">${position}</span>
+                    <span style="background: var(--primary); color: white; border-radius: 12px; padding: 2px 10px; font-size: 12px; font-weight: bold;">${count}</span>
+                </div>
+            `;
+        });
+    }
+}
+
+window.updateAnalyticsDates = updateAnalyticsDates;
+window.loadAnalytics = loadAnalytics;

@@ -467,7 +467,74 @@
                 </div>
             </div>
 
-        </main>
+        <!-- ГЛОБАЛЬНА ВКЛАДКА: АНАЛІТИКА -->
+        <div id="tab-analytics" class="global-tab" style="display: none; padding-bottom: 80px;">
+            <p class="subtitle" style="text-align: center; margin-bottom: 15px;">Параметри аналітики</p>
+            <div class="card">
+                <div class="input-group">
+                    <label>Період аналітики</label>
+                    <select id="analytics-period" onchange="updateAnalyticsDates()">
+                        <option value="month">За місяць</option>
+                        <option value="quarter">За квартал</option>
+                        <option value="all">За весь час (сумарно)</option>
+                        <option value="custom">Довільний період</option>
+                    </select>
+                </div>
+                
+                <div id="analytics-dates-wrap" style="display: flex; gap: 10px;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>З дати</label>
+                        <input type="date" id="analytics-start-date">
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>По дату</label>
+                        <input type="date" id="analytics-end-date">
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="loadAnalytics()" style="width: 100%; margin-top: 15px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">
+                    📊 Отримати аналітичний звіт
+                </button>
+            </div>
+            
+            <div id="analytics-results" style="margin-top: 20px; display: none;">
+                <h3 style="margin-bottom: 15px; text-align: center;">Основні показники</h3>
+                <div class="summary-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                    <div class="summary-card" style="background: #fff; padding: 15px; border-radius: 16px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border);">
+                        <i class="fas fa-coins" style="font-size: 24px; color: #f59e0b; margin-bottom: 8px;"></i>
+                        <span class="summary-val" id="stat-expenses" style="font-size: 20px; font-weight: 700; color: var(--text-main);">0.00</span>
+                        <span class="summary-label" style="font-size: 12px; color: var(--text-muted); text-align: center;">Загальні витрати, грн</span>
+                    </div>
+                    <div class="summary-card" style="background: #fff; padding: 15px; border-radius: 16px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border);">
+                        <i class="fas fa-users" style="font-size: 24px; color: #3b82f6; margin-bottom: 8px;"></i>
+                        <span class="summary-val" id="stat-people" style="font-size: 20px; font-weight: 700; color: var(--text-main);">0</span>
+                        <span class="summary-label" style="font-size: 12px; color: var(--text-muted); text-align: center;">Залучено людей</span>
+                    </div>
+                    <div class="summary-card" style="background: #fff; padding: 15px; border-radius: 16px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border);">
+                        <i class="fas fa-calendar-check" style="font-size: 24px; color: #10b981; margin-bottom: 8px;"></i>
+                        <span class="summary-val" id="stat-mandays" style="font-size: 20px; font-weight: 700; color: var(--text-main);">0</span>
+                        <span class="summary-label" style="font-size: 12px; color: var(--text-muted); text-align: center;">Людино-днів відпрацьовано</span>
+                    </div>
+                    <div class="summary-card" style="background: #fff; padding: 15px; border-radius: 16px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border);">
+                        <i class="fas fa-seedling" style="font-size: 24px; color: #8b5cf6; margin-bottom: 8px;"></i>
+                        <span class="summary-val" id="stat-fertilizers" style="font-size: 20px; font-weight: 700; color: var(--text-main);">0</span>
+                        <span class="summary-label" style="font-size: 12px; color: var(--text-muted); text-align: center;">Використано добрив (кг/л)</span>
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 15px;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-clipboard-list" style="color: var(--primary);"></i> Штат працівників
+                    </h3>
+                    <div id="stat-staff-list" style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Динамічний список штату -->
+                        <div style="text-align: center; padding: 10px; color: var(--text-muted);">Завантаження...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
 
     <nav class="bottom-nav">
         <button id="nav-inventory" class="nav-item active" onclick="switchGlobalTab('tab-inventory', this)">
@@ -481,6 +548,10 @@
         <button id="nav-reports" class="nav-item" onclick="switchGlobalTab('tab-reports', this)">
             <span>📊</span>
             <span>Звіти</span>
+        </button>
+        <button id="nav-analytics" class="nav-item" style="display: none;" onclick="switchGlobalTab('tab-analytics', this)">
+            <span>📈</span>
+            <span>Аналітика</span>
         </button>
     </nav>
 
