@@ -219,7 +219,7 @@ function applyPermissions() {
     // Відображення кнопки табеля для адмінів та головних бригадирів
     const btnAdminAtt = document.getElementById('btn-admin-attendance');
     if (btnAdminAtt) {
-        if (role === 'admin' || role === 'головний бригадир' || role === 'головний_бригадир') {
+        if (role === 'admin' || role === 'головний бригадир' || role === 'головний_бригадир' || role === 'head_brigadier') {
             btnAdminAtt.style.display = 'flex';
         } else {
             btnAdminAtt.style.display = 'none';
@@ -426,15 +426,24 @@ function populateSelects() {
     // Бригади для фільтру
     const brigSel = document.getElementById('wiz-brigade');
     if (brigSel) {
-        const brigades = [...new Set((refData.personnel || []).map(p => p.category).filter(Boolean))];
-        brigSel.innerHTML = '<option value="">всі працівники</option>';
+        let brigades = [...new Set((refData.personnel || []).map(p => p.category).filter(Boolean))];
+        if (userAccess && userAccess.role === 'brigadier' && userAccess.brigade !== 'all') {
+            brigades = [userAccess.brigade];
+        }
+        brigSel.innerHTML = (userAccess && userAccess.role === 'brigadier' && userAccess.brigade !== 'all') 
+            ? '' 
+            : '<option value="">всі працівники</option>';
         brigades.forEach(b => { const o = document.createElement('option'); o.value = b; o.textContent = b; brigSel.appendChild(o); });
     }
     // Працівники для звіту
     const repWorker = document.getElementById('rep-worker');
     if (repWorker) {
+        let personnelList = refData.personnel || [];
+        if (userAccess && userAccess.role === 'brigadier' && userAccess.brigade !== 'all') {
+            personnelList = personnelList.filter(p => p.category === userAccess.brigade);
+        }
         repWorker.innerHTML = '<option value="">— Всі працівники —</option>';
-        (refData.personnel || []).forEach(p => {
+        personnelList.forEach(p => {
             const o = document.createElement('option');
             o.value = p.name;
             o.textContent = p.name + (p.category ? ' (' + p.category + ')' : '');
@@ -445,8 +454,13 @@ function populateSelects() {
     // Бригади для звіту
     const repBrigade = document.getElementById('rep-brigade');
     if (repBrigade) {
-        const brigades = [...new Set((refData.personnel || []).map(p => p.category).filter(Boolean))];
-        repBrigade.innerHTML = '<option value="">— Всі бригади —</option>';
+        let brigades = [...new Set((refData.personnel || []).map(p => p.category).filter(Boolean))];
+        if (userAccess && userAccess.role === 'brigadier' && userAccess.brigade !== 'all') {
+            brigades = [userAccess.brigade];
+        }
+        repBrigade.innerHTML = (userAccess && userAccess.role === 'brigadier' && userAccess.brigade !== 'all') 
+            ? '' 
+            : '<option value="">— Всі бригади —</option>';
         brigades.sort().forEach(b => {
             const o = document.createElement('option');
             o.value = b;
@@ -789,9 +803,16 @@ function updateReportCategories() {
     // Update Report Types
     const prevType = t.value;
     t.innerHTML = '';
-    const types = m.value === 'inventory'
+    let types = m.value === 'inventory'
         ? [['summary', 'Залишки на складі (Сальдо)'], ['detailed', 'Історія рухів (Детально)']]
         : [['summary_workers', 'Загальний по працівниках'], ['detailed_workers', 'Деталізований (по днях/операціях)'], ['calendar', 'Календарний (Дні / Години)'], ['summary_works', 'Загальний по видах робіт'], ['payroll', 'Зарплатна відомість']];
+        
+    if (userAccess && (userAccess.role === 'brigadier' || userAccess.role === 'head_brigadier')) {
+        if (m.value !== 'inventory') {
+            types = [['detailed_workers', 'Деталізований (по днях/операціях)'], ['calendar', 'Табель (Календарний)']];
+        }
+    }
+    
     types.forEach(([v, text]) => { const o = document.createElement('option'); o.value = v; o.textContent = text; t.appendChild(o); });
     
     // Maintain selection if possible
