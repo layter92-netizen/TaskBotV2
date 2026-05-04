@@ -501,9 +501,19 @@
                 <h3 style="margin-bottom: 15px; text-align: center;">Основні показники</h3>
                 <div class="summary-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
                     <div class="summary-card" style="background: var(--bg-card); padding: 15px; border-radius: 16px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border);">
-                        <i class="fas fa-coins" style="font-size: 24px; color: #f59e0b; margin-bottom: 8px;"></i>
-                        <span class="summary-val" id="stat-expenses" style="font-size: 20px; font-weight: 700; color: var(--text-main);">0.00</span>
-                        <span class="summary-label" style="font-size: 12px; color: var(--text-muted); text-align: center;">Загальні витрати, грн</span>
+                        <i class="fas fa-hand-holding-usd" style="font-size: 24px; color: #f59e0b; margin-bottom: 8px;"></i>
+                        <span class="summary-val" id="stat-expenses-manual" style="font-size: 20px; font-weight: 700; color: var(--text-main);">0.00</span>
+                        <span class="summary-label" style="font-size: 12px; color: var(--text-muted); text-align: center;">Виплачено різноробочим, грн</span>
+                    </div>
+                    <div class="summary-card" style="background: var(--bg-card); padding: 15px; border-radius: 16px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border);">
+                        <i class="fas fa-tractor" style="font-size: 24px; color: #f59e0b; margin-bottom: 8px;"></i>
+                        <span class="summary-val" id="stat-expenses-mech" style="font-size: 20px; font-weight: 700; color: var(--text-main);">0.00</span>
+                        <span class="summary-label" style="font-size: 12px; color: var(--text-muted); text-align: center;">Виплачено механізаторам, грн</span>
+                    </div>
+                    <div class="summary-card" style="background: var(--bg-card); padding: 15px; border-radius: 16px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); grid-column: span 2;">
+                        <i class="fas fa-box-open" style="font-size: 24px; color: #ef4444; margin-bottom: 8px;"></i>
+                        <span class="summary-val" id="stat-expenses-materials" style="font-size: 20px; font-weight: 700; color: var(--text-main);">0.00</span>
+                        <span class="summary-label" style="font-size: 12px; color: var(--text-muted); text-align: center;">Витрати на матеріали, грн</span>
                     </div>
                     <div class="summary-card" style="background: var(--bg-card); padding: 15px; border-radius: 16px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border);">
                         <i class="fas fa-users" style="font-size: 24px; color: #3b82f6; margin-bottom: 8px;"></i>
@@ -515,10 +525,14 @@
                         <span class="summary-val" id="stat-mandays" style="font-size: 20px; font-weight: 700; color: var(--text-main);">0</span>
                         <span class="summary-label" style="font-size: 12px; color: var(--text-muted); text-align: center;">Людино-днів відпрацьовано</span>
                     </div>
-                    <div class="summary-card" style="background: var(--bg-card); padding: 15px; border-radius: 16px; box-shadow: var(--shadow-md); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border);">
-                        <i class="fas fa-seedling" style="font-size: 24px; color: #8b5cf6; margin-bottom: 8px;"></i>
-                        <span class="summary-val" id="stat-fertilizers" style="font-size: 20px; font-weight: 700; color: var(--text-main);">0</span>
-                        <span class="summary-label" style="font-size: 12px; color: var(--text-muted); text-align: center;">Використано добрив (кг/л)</span>
+                </div>
+
+                <div class="card" style="padding: 15px; margin-bottom: 15px;">
+                    <h3 style="margin-top: 0; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-boxes" style="color: var(--primary);"></i> Використано матеріалів
+                    </h3>
+                    <div id="stat-materials-list" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="text-align: center; padding: 10px; color: var(--text-muted);">Завантаження...</div>
                     </div>
                 </div>
 
@@ -634,6 +648,6 @@
     <!-- Контейнер повідомлень -->
     <div id="toast-container"></div>
 
-    <script src="app.js?v=156"></script>
+    <script src="app.js?v=157"></script>
 </body>
 </html>

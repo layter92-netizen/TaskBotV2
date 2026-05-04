@@ -1217,13 +1217,35 @@ async function loadAnalytics() {
 
 function renderAnalytics(data) {
     if (!data) return;
-    document.getElementById('stat-expenses').textContent = data.expenses.toFixed(2);
+    document.getElementById('stat-expenses-manual').textContent = data.expensesManual.toFixed(2);
+    document.getElementById('stat-expenses-mech').textContent = data.expensesMech.toFixed(2);
+    document.getElementById('stat-expenses-materials').textContent = data.expensesMaterials.toFixed(2);
     document.getElementById('stat-people').textContent = data.uniquePeople;
     document.getElementById('stat-mandays').textContent = data.manDays;
     
-    let fertNum = parseFloat(String(data.fertilizers).replace(',', '.')) || 0;
-    let fertStr = Number.isInteger(fertNum) ? fertNum.toString() : (Math.round(fertNum * 1000) / 1000).toString();
-    document.getElementById('stat-fertilizers').textContent = fertStr;
+    // Materials Usage Breakdown
+    const materialsList = document.getElementById('stat-materials-list');
+    materialsList.innerHTML = '';
+    const categories = Object.keys(data.materialsUsage || {});
+    if (categories.length === 0) {
+        materialsList.innerHTML = '<div style="text-align: center; color: var(--text-muted);">Немає даних про витрачені матеріали</div>';
+    } else {
+        categories.forEach(cat => {
+            const unitsObj = data.materialsUsage[cat];
+            let unitsHtml = '';
+            for (const [unit, qty] of Object.entries(unitsObj)) {
+                let qtyNum = parseFloat(String(qty).replace(',', '.')) || 0;
+                let qtyStr = Number.isInteger(qtyNum) ? qtyNum.toString() : (Math.round(qtyNum * 1000) / 1000).toString();
+                unitsHtml += `<span style="display: inline-block; background: rgba(16, 185, 129, 0.1); color: var(--primary-dark); padding: 2px 8px; border-radius: 6px; font-size: 13px; font-weight: 600; margin-right: 5px; margin-top: 4px;">${qtyStr} ${unit}</span>`;
+            }
+            materialsList.innerHTML += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--input-bg); border-radius: 8px; flex-wrap: wrap;">
+                    <span style="font-weight: 600; font-size: 14px; color: var(--text-main); margin-bottom: 2px;">${cat}</span>
+                    <div style="display: flex; flex-wrap: wrap; justify-content: flex-end;">${unitsHtml}</div>
+                </div>
+            `;
+        });
+    }
     
     const staffList = document.getElementById('stat-staff-list');
     staffList.innerHTML = '';
