@@ -260,7 +260,9 @@ function renderInventory(catFilter) {
     data.forEach(item => {
         const el = document.createElement('div');
         el.className = 'inventory-item';
-        el.innerHTML = '<div class="item-info"><h4>' + item.name + '</h4><span class="item-cat">' + item.category + '</span></div><div class="item-qty">' + item.quantity + ' ' + item.unit + '</div>';
+        let qtyNum = parseFloat(String(item.quantity).replace(',', '.')) || 0;
+        let qtyStr = Number.isInteger(qtyNum) ? qtyNum.toString() : (Math.round(qtyNum * 1000) / 1000).toString();
+        el.innerHTML = '<div class="item-info"><h4>' + item.name + '</h4><span class="item-cat">' + item.category + '</span></div><div class="item-qty">' + qtyStr + ' ' + item.unit + '</div>';
         list.appendChild(el);
     });
 }
