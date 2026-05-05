@@ -1223,6 +1223,10 @@ function renderAnalytics(data) {
     document.getElementById('stat-people').textContent = data.uniquePeople;
     document.getElementById('stat-mandays').textContent = data.manDays;
     
+    // New metrics:
+    if (document.getElementById('stat-hectares')) document.getElementById('stat-hectares').textContent = (data.totalHectares || 0).toFixed(2);
+    if (document.getElementById('stat-hours')) document.getElementById('stat-hours').textContent = (data.totalHours || 0).toFixed(2);
+    
     // Materials Usage Breakdown
     const materialsList = document.getElementById('stat-materials-list');
     materialsList.innerHTML = '';
@@ -1231,17 +1235,26 @@ function renderAnalytics(data) {
         materialsList.innerHTML = '<div style="text-align: center; color: var(--text-muted);">Немає даних про витрачені матеріали</div>';
     } else {
         categories.forEach(cat => {
-            const unitsObj = data.materialsUsage[cat];
+            const catData = data.materialsUsage[cat];
+            const unitsObj = catData.units || {};
+            const totalCost = catData.totalCost || 0;
+            
             let unitsHtml = '';
             for (const [unit, qty] of Object.entries(unitsObj)) {
                 let qtyNum = parseFloat(String(qty).replace(',', '.')) || 0;
                 let qtyStr = Number.isInteger(qtyNum) ? qtyNum.toString() : (Math.round(qtyNum * 1000) / 1000).toString();
                 unitsHtml += `<span style="display: inline-block; background: rgba(16, 185, 129, 0.1); color: var(--primary-dark); padding: 2px 8px; border-radius: 6px; font-size: 13px; font-weight: 600; margin-right: 5px; margin-top: 4px;">${qtyStr} ${unit}</span>`;
             }
+            
+            let costHtml = totalCost > 0 ? `<div style="font-size: 12px; color: var(--text-muted); width: 100%; margin-top: 4px; text-align: right;">Сума: <b>${totalCost.toFixed(2)} грн</b></div>` : '';
+            
             materialsList.innerHTML += `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--input-bg); border-radius: 8px; flex-wrap: wrap;">
                     <span style="font-weight: 600; font-size: 14px; color: var(--text-main); margin-bottom: 2px;">${cat}</span>
-                    <div style="display: flex; flex-wrap: wrap; justify-content: flex-end;">${unitsHtml}</div>
+                    <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; width: 100%;">
+                        <div style="display: flex; flex-wrap: wrap; justify-content: flex-end;">${unitsHtml}</div>
+                        ${costHtml}
+                    </div>
                 </div>
             `;
         });
