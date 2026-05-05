@@ -1224,8 +1224,9 @@ function renderAnalytics(data) {
     document.getElementById('stat-mandays').textContent = data.manDays;
     
     // New metrics:
-    if (document.getElementById('stat-hectares')) document.getElementById('stat-hectares').textContent = (data.totalHectares || 0).toFixed(2);
-    if (document.getElementById('stat-hours')) document.getElementById('stat-hours').textContent = (data.totalHours || 0).toFixed(2);
+    if (document.getElementById('stat-hectares-mech')) document.getElementById('stat-hectares-mech').textContent = (data.totalHectaresMech || 0).toFixed(2);
+    if (document.getElementById('stat-hours-mech')) document.getElementById('stat-hours-mech').textContent = (data.totalHoursMech || 0).toFixed(2);
+    if (document.getElementById('stat-hours-manual')) document.getElementById('stat-hours-manual').textContent = (data.totalHoursManual || 0).toFixed(2);
     
     // Materials Usage Breakdown
     const materialsList = document.getElementById('stat-materials-list');
