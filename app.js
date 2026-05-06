@@ -86,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
             submitInvTransaction('arrival');
         });
     }
-
     // Форма видачі
     const formIssuance = document.getElementById('form-issuance');
     if (formIssuance) {
@@ -1260,7 +1259,36 @@ function renderAnalytics(data) {
             `;
         });
     }
-    
+    // Works Summary Breakdown
+    const worksList = document.getElementById('stat-works-list');
+    if (worksList) {
+        worksList.innerHTML = '';
+        const worksNames = Object.keys(data.worksSummary || {}).sort();
+        
+        if (worksNames.length === 0) {
+            worksList.innerHTML = '<div style="text-align: center; color: var(--text-muted);">Немає даних про виконані роботи</div>';
+        } else {
+            worksNames.forEach(wName => {
+                const wData = data.worksSummary[wName];
+                
+                let qtyNum = parseFloat(String(wData.qty).replace(',', '.')) || 0;
+                let qtyStr = Number.isInteger(qtyNum) ? qtyNum.toString() : (Math.round(qtyNum * 1000) / 1000).toString();
+                let unitStr = wData.unit || 'од.';
+                let costVal = wData.cost || 0;
+                
+                worksList.innerHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: var(--input-bg); border-radius: 8px; flex-wrap: wrap;">
+                        <span style="font-weight: 600; font-size: 14px; color: var(--text-main); margin-bottom: 2px; width: 100%;">${wName}</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 4px;">
+                            <span style="display: inline-block; background: rgba(59, 130, 246, 0.1); color: var(--primary); padding: 2px 8px; border-radius: 6px; font-size: 13px; font-weight: 600;">${qtyStr} ${unitStr}</span>
+                            <span style="font-size: 13px; font-weight: 600; color: #f59e0b;">${costVal.toFixed(2)} грн</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    }
+
     const staffList = document.getElementById('stat-staff-list');
     staffList.innerHTML = '';
     if (Object.keys(data.staffCounts).length === 0) {
