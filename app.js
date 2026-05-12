@@ -1457,7 +1457,7 @@ async function saveMixture() {
             showToast('Помилка: ' + res.message, 'error');
         }
     } catch(e) {
-        showToast('Помилка з\\'єднання', 'error');
+        showToast('Помилка з\'єднання', 'error');
     } finally {
         document.getElementById('btn-save-mixture').disabled = false;
     }
