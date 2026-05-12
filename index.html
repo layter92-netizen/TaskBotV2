@@ -57,6 +57,9 @@
                         <button id="btn-add-material" class="btn btn-primary" style="margin-bottom: 10px;">
                             <i class="fas fa-plus"></i> Новий товар бази
                         </button>
+                        <button id="btn-manage-mixtures" class="btn btn-secondary" style="margin-bottom: 10px; background: rgba(59, 130, 246, 0.1); color: var(--primary); border: 1px solid var(--primary);">
+                            <i class="fas fa-flask"></i> Бакові суміші
+                        </button>
                     </div>
 
                     <div class="card">
@@ -338,7 +341,10 @@
                                             <input type="number" id="wiz-pest-vol" placeholder="Використано всього" step="0.01">
                                         </div>
                                     </div>
-                                    <button class="btn btn-outline" style="width:100%; padding: 8px;" onclick="addPesticideToTask()">+ Додати препарат</button>
+                                    <div style="display:flex; gap:10px;">
+                                        <button class="btn btn-outline" style="flex:1; padding: 8px;" onclick="addPesticideToTask()">+ Додати</button>
+                                        <button class="btn btn-primary" style="flex:2; padding: 8px; background:var(--primary); color:white;" onclick="openApplyMixtureModal()"><i class="fas fa-flask"></i> З бакової суміші</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -668,7 +674,61 @@
             </div>
         </div>
     </div>
+    <!-- Модалка списку бакових сумішей -->
+    <div id="modal-mixtures" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h2 style="margin: 0;">Бакові суміші</h2>
+                <button id="btn-new-mixture" class="btn btn-primary" style="padding: 5px 10px; font-size: 13px;"><i class="fas fa-plus"></i> Створити</button>
+            </div>
+            <div id="mixtures-list" class="list-container">
+                <!-- Список сумішей -->
+            </div>
+        </div>
+    </div>
 
+    <!-- Модалка редагування бакової суміші -->
+    <div id="modal-mixture-edit" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="document.getElementById('modal-mixture-edit').classList.remove('active')">&times;</span>
+            <h2 id="mixture-edit-title">Створити суміш</h2>
+            <form id="form-mixture-edit">
+                <input type="hidden" id="mixture-old-name">
+                <div class="input-group">
+                    <label>Назва суміші</label>
+                    <input type="text" id="mixture-name" placeholder="Напр. Обробка яблуні весна" required>
+                </div>
+                <div class="input-group">
+                    <label style="display:flex;justify-content:space-between;align-items:center;">
+                        Склад (на 1 бочку)
+                        <button type="button" class="btn btn-secondary" style="padding:4px 8px; font-size: 12px;" onclick="addMixtureComponentRow()"><i class="fas fa-plus"></i> Додати препарат</button>
+                    </label>
+                    <div id="mixture-components-container">
+                        <!-- Компоненти -->
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success" id="btn-save-mixture">Зберегти суміш</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка застосування бакової суміші в наряді -->
+    <div id="modal-mixture-apply" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="document.getElementById('modal-mixture-apply').classList.remove('active')">&times;</span>
+            <h2>Використати суміш</h2>
+            <div class="input-group">
+                <label>Оберіть бакову суміш</label>
+                <select id="apply-mixture-select"></select>
+            </div>
+            <div class="input-group">
+                <label>Кількість вироблених бочок</label>
+                <input type="number" step="0.1" id="apply-mixture-tanks" placeholder="Напр. 5" required>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="applyMixtureToTask()">Додати в наряд</button>
+        </div>
+    </div>
     <!-- Контейнер повідомлень -->
     <div id="toast-container"></div>
 

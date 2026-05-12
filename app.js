@@ -115,6 +115,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Бакові суміші
+    const btnManageMix = document.getElementById('btn-manage-mixtures');
+    if (btnManageMix) btnManageMix.addEventListener('click', loadMixturesList);
+    
+    const btnNewMix = document.getElementById('btn-new-mixture');
+    if (btnNewMix) btnNewMix.addEventListener('click', () => openMixtureEditModal());
+    
+    const formMixEdit = document.getElementById('form-mixture-edit');
+    if (formMixEdit) formMixEdit.addEventListener('submit', e => {
+        e.preventDefault();
+        saveMixture();
+    });
+
     // Тема
     const themeBtn = document.getElementById('theme-toggle');
     if (themeBtn) {
@@ -1322,3 +1335,208 @@ function renderAnalytics(data) {
 
 window.updateAnalyticsDates = updateAnalyticsDates;
 window.loadAnalytics = loadAnalytics;
+
+// ==================== БАКОВІ СУМІШІ ====================
+
+function loadMixturesList() {
+    document.getElementById('modal-mixtures').style.display = 'flex';
+    const listEl = document.getElementById('mixtures-list');
+    listEl.innerHTML = '';
+    
+    if (!refData.mixtures || refData.mixtures.length === 0) {
+        listEl.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;">Немає збережених сумішей</div>';
+        return;
+    }
+    
+    refData.mixtures.forEach(mix => {
+        let itemsHtml = mix.items.map(i => `<div style="font-size: 12px; color: var(--text-muted);">${i.mat}: ${i.dose} ${i.unit}</div>`).join('');
+        
+        listEl.innerHTML += `
+            <div class="card" style="padding: 10px; margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 14px; margin-bottom: 5px;">${mix.name}</div>
+                        ${itemsHtml}
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="icon-btn" style="color: var(--primary);" onclick='openMixtureEditModal(${JSON.stringify(mix)})'><i class="fas fa-edit"></i></button>
+                        <button class="icon-btn" style="color: #ef4444;" onclick="deleteMixture('${mix.name}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function openMixtureEditModal(mix = null) {
+    document.getElementById('modal-mixture-edit').style.display = 'flex';
+    document.getElementById('mixture-components-container').innerHTML = '';
+    
+    if (mix) {
+        document.getElementById('mixture-edit-title').textContent = 'Редагувати суміш';
+        document.getElementById('mixture-old-name').value = mix.name;
+        document.getElementById('mixture-name').value = mix.name;
+        mix.items.forEach(item => addMixtureComponentRow(item));
+    } else {
+        document.getElementById('mixture-edit-title').textContent = 'Створити суміш';
+        document.getElementById('mixture-old-name').value = '';
+        document.getElementById('mixture-name').value = '';
+        addMixtureComponentRow();
+    }
+}
+
+function addMixtureComponentRow(item = null) {
+    const container = document.getElementById('mixture-components-container');
+    const rowId = 'mix-comp-' + Date.now() + Math.random().toString().slice(2,5);
+    
+    // Build options from pesticides and fertilizers
+    const materials = inventoryData.filter(i => i.category === 'Пестициди' || i.category === 'Добрива' || i.category === 'Інші мат.');
+    materials.sort((a,b) => a.name.localeCompare(b.name));
+    
+    let options = '<option value="">- оберіть -</option>';
+    materials.forEach(m => {
+        const selected = (item && item.mat === m.name) ? 'selected' : '';
+        options += `<option value="${m.name}" data-unit="${m.unit}" ${selected}>${m.name} (${m.unit})</option>`;
+    });
+    
+    const doseVal = item ? item.dose : '';
+    
+    const html = `
+        <div id="${rowId}" style="display:flex; gap:10px; margin-bottom:10px; align-items:center; background:rgba(0,0,0,0.02); padding:8px; border-radius:8px;">
+            <div style="flex:2;">
+                <select class="mix-comp-select" required style="width:100%; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; background: var(--input-bg); color: var(--text-main); font-family: inherit;">${options}</select>
+            </div>
+            <div style="flex:1;">
+                <input type="number" class="mix-comp-dose" placeholder="Доза" step="0.001" value="${doseVal}" required style="width:100%; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; background: var(--input-bg); color: var(--text-main); font-family: inherit;">
+            </div>
+            <button type="button" class="icon-btn" style="color:#ef4444;" onclick="document.getElementById('${rowId}').remove()"><i class="fas fa-times"></i></button>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+async function saveMixture() {
+    const newName = document.getElementById('mixture-name').value.trim();
+    const oldName = document.getElementById('mixture-old-name').value.trim();
+    
+    const components = [];
+    document.querySelectorAll('#mixture-components-container > div').forEach(row => {
+        const sel = row.querySelector('.mix-comp-select');
+        const dose = parseFloat(row.querySelector('.mix-comp-dose').value) || 0;
+        if (sel.value && dose > 0) {
+            const unit = sel.options[sel.selectedIndex].getAttribute('data-unit');
+            components.push({ mat: sel.value, dose: dose, unit: unit });
+        }
+    });
+    
+    if (components.length === 0) {
+        showToast('Додайте хоча б один препарат!', 'error');
+        return;
+    }
+    
+    const data = {
+        action: 'saveMixture',
+        name: newName,
+        items: components
+    };
+    
+    document.getElementById('btn-save-mixture').disabled = true;
+    try {
+        const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data) });
+        const res = await response.json();
+        if (res.status === 'success') {
+            showToast('Суміш збережено', 'success');
+            document.getElementById('modal-mixture-edit').style.display = 'none';
+            // Update local refData (optimistic)
+            if (!refData.mixtures) refData.mixtures = [];
+            const idx = refData.mixtures.findIndex(m => m.name === (oldName || newName));
+            if (idx >= 0) refData.mixtures[idx] = { name: newName, items: components };
+            else refData.mixtures.push({ name: newName, items: components });
+            loadMixturesList();
+        } else {
+            showToast('Помилка: ' + res.message, 'error');
+        }
+    } catch(e) {
+        showToast('Помилка з\\'єднання', 'error');
+    } finally {
+        document.getElementById('btn-save-mixture').disabled = false;
+    }
+}
+
+async function deleteMixture(name) {
+    if (!confirm('Видалити суміш "' + name + '"?')) return;
+    
+    const data = { action: 'deleteMixture', name: name };
+    try {
+        const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data) });
+        const res = await response.json();
+        if (res.status === 'success') {
+            showToast('Видалено', 'success');
+            if (refData.mixtures) refData.mixtures = refData.mixtures.filter(m => m.name !== name);
+            loadMixturesList();
+        } else {
+            showToast('Помилка', 'error');
+        }
+    } catch(e) {}
+}
+
+function openApplyMixtureModal() {
+    const select = document.getElementById('apply-mixture-select');
+    select.innerHTML = '<option value="">- оберіть суміш -</option>';
+    
+    if (refData.mixtures) {
+        refData.mixtures.forEach(m => {
+            select.innerHTML += `<option value="${m.name}">${m.name}</option>`;
+        });
+    }
+    
+    document.getElementById('apply-mixture-tanks').value = '';
+    document.getElementById('modal-mixture-apply').style.display = 'flex';
+}
+
+function applyMixtureToTask() {
+    const mixName = document.getElementById('apply-mixture-select').value;
+    const tanks = parseFloat(document.getElementById('apply-mixture-tanks').value) || 0;
+    
+    if (!mixName || tanks <= 0) {
+        showToast('Оберіть суміш та вкажіть кількість бочок', 'error');
+        return;
+    }
+    
+    const mix = refData.mixtures.find(m => m.name === mixName);
+    if (!mix) return;
+    
+    // Add components to taskPesticides
+    mix.items.forEach(item => {
+        // Check if already in list
+        let existing = taskPesticides.find(p => p.material === item.mat);
+        let totalQty = item.dose * tanks;
+        // Fix JS precision issues
+        totalQty = Math.round(totalQty * 1000) / 1000;
+        
+        if (existing) {
+            existing.totalQty += totalQty;
+            existing.tankCount = Math.max(existing.tankCount || 0, tanks);
+        } else {
+            taskPesticides.push({
+                material: item.mat,
+                tankCount: tanks,
+                totalQty: totalQty,
+                unit: item.unit
+            });
+        }
+    });
+    
+    const listEl = document.getElementById('wiz-pest-list');
+    listEl.innerHTML = '';
+    taskPesticides.forEach(p => {
+        const item = document.createElement('div');
+        item.style.cssText = 'padding:6px; background:var(--input-bg); border-radius:6px; margin-bottom:5px; font-size:13px;';
+        item.textContent = p.material + ' — ' + p.totalQty + ' ' + (p.unit || '');
+        listEl.appendChild(item);
+    });
+    
+    document.getElementById('modal-mixture-apply').style.display = 'none';
+    showToast('Препарати із суміші додано', 'success');
+}
+// =======================================================
