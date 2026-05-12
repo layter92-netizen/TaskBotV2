@@ -1402,14 +1402,15 @@ function addMixtureComponentRow(item = null) {
     const doseVal = item ? item.dose : '';
     
     const html = `
-        <div id="${rowId}" style="display:flex; gap:10px; margin-bottom:10px; align-items:center; background:rgba(0,0,0,0.02); padding:8px; border-radius:8px;">
-            <div style="flex:2;">
-                <select class="mix-comp-select" required style="width:100%; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; background: var(--input-bg); color: var(--text-main); font-family: inherit;">${options}</select>
+        <div id="${rowId}" style="margin-bottom:12px; background:var(--bg-main); padding:12px; border-radius:12px; border:1px solid var(--border); box-shadow:var(--shadow-sm);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:12px; font-weight:600; color:var(--text-muted);">Препарат</span>
+                <button type="button" class="icon-btn" style="color:#ef4444; width:24px; height:24px; min-width:24px;" onclick="document.getElementById('${rowId}').remove()"><i class="fas fa-times"></i></button>
             </div>
-            <div style="flex:1;">
-                <input type="number" class="mix-comp-dose" placeholder="Доза" step="0.001" value="${doseVal}" required style="width:100%; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px; background: var(--input-bg); color: var(--text-main); font-family: inherit;">
+            <select class="mix-comp-select" required style="width:100%; margin-bottom:10px;">${options}</select>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="number" class="mix-comp-dose" placeholder="Доза (на 1 бочку)" step="0.001" value="${doseVal}" required style="flex:1;">
             </div>
-            <button type="button" class="icon-btn" style="color:#ef4444;" onclick="document.getElementById('${rowId}').remove()"><i class="fas fa-times"></i></button>
         </div>
     `;
     container.insertAdjacentHTML('beforeend', html);
@@ -1437,29 +1438,32 @@ async function saveMixture() {
     const data = {
         action: 'saveMixture',
         name: newName,
+        oldName: oldName,
         items: components
     };
     
     document.getElementById('btn-save-mixture').disabled = true;
+    tg.MainButton.showProgress();
     try {
-        const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data) });
-        const res = await response.json();
-        if (res.status === 'success') {
-            showToast('Суміш збережено', 'success');
-            document.getElementById('modal-mixture-edit').style.display = 'none';
-            // Update local refData (optimistic)
-            if (!refData.mixtures) refData.mixtures = [];
-            const idx = refData.mixtures.findIndex(m => m.name === (oldName || newName));
-            if (idx >= 0) refData.mixtures[idx] = { name: newName, items: components };
-            else refData.mixtures.push({ name: newName, items: components });
-            loadMixturesList();
-        } else {
-            showToast('Помилка: ' + res.message, 'error');
-        }
+        await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+        showToast('Суміш збережено', 'success');
+        document.getElementById('modal-mixture-edit').style.display = 'none';
+        
+        // Optimistic UI update
+        if (!refData.mixtures) refData.mixtures = [];
+        const idx = refData.mixtures.findIndex(m => m.name === (oldName || newName));
+        if (idx >= 0) refData.mixtures[idx] = { name: newName, items: components };
+        else refData.mixtures.push({ name: newName, items: components });
+        
+        loadMixturesList();
+        
+        // Reload from backend to be sure
+        setTimeout(() => loadAllData(), 500);
     } catch(e) {
         showToast('Помилка з\'єднання', 'error');
     } finally {
         document.getElementById('btn-save-mixture').disabled = false;
+        tg.MainButton.hideProgress();
     }
 }
 
@@ -1468,16 +1472,16 @@ async function deleteMixture(name) {
     
     const data = { action: 'deleteMixture', name: name };
     try {
-        const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data) });
-        const res = await response.json();
-        if (res.status === 'success') {
-            showToast('Видалено', 'success');
-            if (refData.mixtures) refData.mixtures = refData.mixtures.filter(m => m.name !== name);
-            loadMixturesList();
-        } else {
-            showToast('Помилка', 'error');
-        }
-    } catch(e) {}
+        await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+        showToast('Видалено', 'success');
+        if (refData.mixtures) refData.mixtures = refData.mixtures.filter(m => m.name !== name);
+        loadMixturesList();
+        
+        // Reload from backend to be sure
+        setTimeout(() => loadAllData(), 500);
+    } catch(e) {
+        showToast('Помилка', 'error');
+    }
 }
 
 function openApplyMixtureModal() {

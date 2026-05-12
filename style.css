@@ -363,6 +363,11 @@ textarea {
     transition: var(--transition);
 }
 
+select option {
+    background-color: var(--bg-card);
+    color: var(--text-main);
+}
+
 input:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--primary);
