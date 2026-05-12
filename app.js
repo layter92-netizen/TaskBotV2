@@ -1513,19 +1513,20 @@ function applyMixtureToTask() {
     // Add components to taskPesticides
     mix.items.forEach(item => {
         // Check if already in list
-        let existing = taskPesticides.find(p => p.material === item.mat);
+        let existing = taskPesticides.find(p => p.name === item.mat || p.material === item.mat);
         let totalQty = item.dose * tanks;
         // Fix JS precision issues
         totalQty = Math.round(totalQty * 1000) / 1000;
         
         if (existing) {
-            existing.totalQty += totalQty;
+            existing.volume = (parseFloat(existing.volume || existing.totalQty) || 0) + totalQty;
             existing.tankCount = Math.max(existing.tankCount || 0, tanks);
         } else {
             taskPesticides.push({
-                material: item.mat,
+                name: item.mat,
+                dose: item.dose,
+                volume: totalQty,
                 tankCount: tanks,
-                totalQty: totalQty,
                 unit: item.unit
             });
         }
@@ -1536,7 +1537,9 @@ function applyMixtureToTask() {
     taskPesticides.forEach(p => {
         const item = document.createElement('div');
         item.style.cssText = 'padding:6px; background:var(--input-bg); border-radius:6px; margin-bottom:5px; font-size:13px;';
-        item.textContent = p.material + ' — ' + p.totalQty + ' ' + (p.unit || '');
+        let matName = p.name || p.material;
+        let qty = p.volume || p.totalQty;
+        item.textContent = matName + ' — ' + qty + ' ' + (p.unit || '');
         listEl.appendChild(item);
     });
     
