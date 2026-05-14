@@ -503,6 +503,9 @@ function startWizard(type) {
     currentWizStep = 1;
     selectedWorkers = [];
     taskPesticides = [];
+    
+    const pestListEl = document.getElementById('wiz-pest-list');
+    if (pestListEl) pestListEl.innerHTML = '';
 
     const dash = document.getElementById('tasks-dashboard');
     const wiz = document.getElementById('task-wizard');
