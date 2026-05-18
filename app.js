@@ -1238,6 +1238,11 @@ function renderAnalytics(data) {
     document.getElementById('stat-people').textContent = data.uniquePeople;
     document.getElementById('stat-mandays').textContent = data.manDays;
     
+    const totalExpenses = (data.expensesManual || 0) + (data.expensesMech || 0) + (data.expensesMaterials || 0);
+    const costPerHectare = data.totalOrchardArea > 0 ? (totalExpenses / data.totalOrchardArea) : 0;
+    const statPerHa = document.getElementById('stat-expenses-per-ha');
+    if (statPerHa) statPerHa.textContent = costPerHectare.toLocaleString('uk-UA', {minimumFractionDigits:2, maximumFractionDigits:2});
+    
     // New metrics:
     if (document.getElementById('stat-hectares-mech')) document.getElementById('stat-hectares-mech').textContent = (data.totalHectaresMech || 0).toFixed(2);
     if (document.getElementById('stat-hours-mech')) document.getElementById('stat-hours-mech').textContent = (data.totalHoursMech || 0).toFixed(2);
@@ -1334,6 +1339,39 @@ function renderAnalytics(data) {
             `;
         });
     }
+
+    // Витрати по садах
+    let gardenHtml = '<div class="card fade-in" style="margin-top:20px; margin-bottom:20px;"><h3>Витрати по садах</h3>';
+    if (data.gardenExpenses && Object.keys(data.gardenExpenses).length > 0) {
+        gardenHtml += '<table class="report-table" style="width:100%; border-collapse: collapse; margin-top: 10px;"><thead><tr style="border-bottom: 2px solid var(--border);"><th style="text-align: left; padding: 8px;">Сад</th><th style="text-align: right; padding: 8px;">Площа (Га)</th><th style="text-align: right; padding: 8px;">Витрати (грн)</th><th style="text-align: right; padding: 8px;">На 1 Га</th></tr></thead><tbody>';
+        
+        // Sort gardens alphabetically
+        const sortedGardens = Object.keys(data.gardenExpenses).sort();
+        for (let g of sortedGardens) {
+            let exp = data.gardenExpenses[g] || 0;
+            let area = data.gardenAreas[g] || 0;
+            let perHa = area > 0 ? (exp / area) : 0;
+            gardenHtml += `<tr style="border-bottom: 1px solid rgba(0,0,0,0.05);">
+                <td style="padding: 8px;">${g}</td>
+                <td style="text-align: right; padding: 8px;">${area}</td>
+                <td style="text-align: right; font-weight: 600; padding: 8px; color: #f59e0b;">${exp.toLocaleString('uk-UA', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                <td style="text-align: right; padding: 8px;">${perHa.toLocaleString('uk-UA', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            </tr>`;
+        }
+        gardenHtml += '</tbody></table>';
+    } else {
+        gardenHtml += '<p class="text-muted" style="margin-top: 10px;">Немає даних по садах за цей період.</p>';
+    }
+    gardenHtml += '</div>';
+    
+    const container = document.getElementById('analytics-results');
+    const oldGardenDiv = document.getElementById('analytics-garden-breakdown');
+    if (oldGardenDiv) oldGardenDiv.remove();
+    
+    const newGardenDiv = document.createElement('div');
+    newGardenDiv.id = 'analytics-garden-breakdown';
+    newGardenDiv.innerHTML = gardenHtml;
+    container.appendChild(newGardenDiv);
 }
 
 window.updateAnalyticsDates = updateAnalyticsDates;
