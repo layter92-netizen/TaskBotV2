@@ -226,8 +226,9 @@ function applyPermissions() {
     if (role === 'worker') {
         if (navInv) navInv.style.display = 'none';
         switchGlobalTab('tab-tasks', navTasks);
-    } else if (role === 'brigadier') {
+    } else if (role === 'brigadier' || role === 'головний бригадир' || role === 'головний_бригадир' || role === 'head_brigadier') {
         if (navInv) navInv.style.display = 'none';
+        switchGlobalTab('tab-tasks', navTasks);
     }
     
     // Відображення кнопки табеля для адмінів та головних бригадирів
