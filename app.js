@@ -704,7 +704,11 @@ function updateWizView() {
     if (viewEl) viewEl.style.display = 'block';
     const btn = document.getElementById('wiz-next');
     const isLast = currentWizStep >= (isPest ? 4 : 3);
-    if (btn) btn.innerHTML = isLast ? 'Записати <i class="fas fa-check"></i>' : 'Далі <i class="fas fa-arrow-right"></i>';
+    if (btn) {
+        btn.disabled = false;
+        btn.style.background = '';
+        btn.innerHTML = isLast ? 'Записати <i class="fas fa-check"></i>' : 'Далі <i class="fas fa-arrow-right"></i>';
+    }
     if (isLast) buildSummary();
 }
 
@@ -793,11 +797,25 @@ async function submitTask() {
         pesticideDetails: taskPesticides
     };
     tg.MainButton.showProgress();
+    const btnNext = document.getElementById('wiz-next');
+    if (btnNext) {
+        btnNext.disabled = true;
+        btnNext.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Відправка...';
+        btnNext.style.background = '#9ca3af';
+    }
+    
     try {
         await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
         tg.showAlert('✅ Наряд збережено!');
         closeWizard();
-    } catch (e) { tg.showAlert('Помилка збереження'); } finally { tg.MainButton.hideProgress(); }
+    } catch (e) { 
+        tg.showAlert('Помилка збереження'); 
+        if (btnNext) {
+            btnNext.disabled = false;
+            btnNext.innerHTML = 'Записати <i class="fas fa-check"></i>';
+            btnNext.style.background = '';
+        }
+    } finally { tg.MainButton.hideProgress(); }
 }
 
 // ── REPORTS ──
